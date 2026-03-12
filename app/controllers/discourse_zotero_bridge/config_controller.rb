@@ -5,6 +5,9 @@ module DiscourseZoteroBridge
     requires_plugin PLUGIN_NAME
     requires_login
 
+    skip_before_action :check_xhr, only: [:download_latest]
+    skip_before_action :preload_json, only: [:download_latest]
+
     GITHUB_REPO = "young-bo-i/zotero-enterscholar"
     GITHUB_API_RELEASES = "https://api.github.com/repos/#{GITHUB_REPO}/releases/latest"
     DOWNLOAD_CACHE_KEY = "zotero_bridge_latest_xpi"
