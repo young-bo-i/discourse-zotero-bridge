@@ -1,0 +1,14 @@
+zh_CN:
+  site_settings:
+    discourse_zotero_bridge_enabled: "启用 Zotero Bridge 插件"
+    zotero_bridge_llm_endpoint: "LLM API 端点 URL"
+    zotero_bridge_llm_api_key: "LLM API 密钥（机密）"
+    zotero_bridge_llm_model_name: "默认 LLM 模型名称"
+    zotero_bridge_daily_quota_tl0: "信任等级 0 用户每日请求配额"
+    zotero_bridge_daily_quota_tl1: "信任等级 1 用户每日请求配额"
+    zotero_bridge_daily_quota_tl2: "信任等级 2 用户每日请求配额"
+    zotero_bridge_daily_quota_tl3: "信任等级 3 用户每日请求配额"
+    zotero_bridge_daily_quota_tl4: "信任等级 4 用户每日请求配额"
+  zotero_bridge:
+    errors:
+      quota_exceeded: "每日请求配额已用完，请明天再试。"

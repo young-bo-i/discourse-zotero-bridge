@@ -1,0 +1,14 @@
+en:
+  site_settings:
+    discourse_zotero_bridge_enabled: "Enable the Zotero Bridge plugin"
+    zotero_bridge_llm_endpoint: "LLM API endpoint URL"
+    zotero_bridge_llm_api_key: "LLM API key (secret)"
+    zotero_bridge_llm_model_name: "Default LLM model name"
+    zotero_bridge_daily_quota_tl0: "Daily request quota for Trust Level 0 users"
+    zotero_bridge_daily_quota_tl1: "Daily request quota for Trust Level 1 users"
+    zotero_bridge_daily_quota_tl2: "Daily request quota for Trust Level 2 users"
+    zotero_bridge_daily_quota_tl3: "Daily request quota for Trust Level 3 users"
+    zotero_bridge_daily_quota_tl4: "Daily request quota for Trust Level 4 users"
+  zotero_bridge:
+    errors:
+      quota_exceeded: "Daily request quota exceeded. Please try again tomorrow."

@@ -1,0 +1,12 @@
+en:
+  js:
+    zotero_bridge:
+      header_title: "Zotero Bridge Usage"
+      panel_title: "Zotero Bridge"
+      username: "Username"
+      trust_level: "Trust Level"
+      used_today: "Used Today"
+      remaining: "Remaining"
+      reset_hint: "Quota resets daily at midnight (UTC)"
+      load_error: "Failed to load usage data"
+      retry: "Retry"

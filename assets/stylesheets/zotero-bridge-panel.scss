@@ -1,0 +1,130 @@
+.zotero-bridge-header-icon {
+  .fk-d-menu__trigger {
+    .d-icon {
+      font-size: var(--font-up-1);
+    }
+  }
+}
+
+.zotero-bridge-panel {
+  padding: 0.75em 1em;
+  min-width: 260px;
+  font-size: var(--font-down-1);
+
+  &__header {
+    display: flex;
+    align-items: center;
+    gap: 0.5em;
+    font-weight: 700;
+    font-size: var(--font-up-1);
+    margin-bottom: 0.75em;
+    color: var(--primary);
+
+    .d-icon {
+      color: var(--tertiary);
+    }
+  }
+
+  &__user,
+  &__trust,
+  &__remaining {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.35em 0;
+  }
+
+  &__label {
+    color: var(--primary-medium);
+  }
+
+  &__value {
+    font-weight: 600;
+    color: var(--primary);
+  }
+
+  &__tl-badge {
+    background: var(--tertiary);
+    color: var(--secondary);
+    padding: 0.1em 0.5em;
+    border-radius: 0.25em;
+    font-size: var(--font-down-1);
+  }
+
+  &__remaining-count {
+    font-size: var(--font-up-1);
+    color: var(--tertiary);
+  }
+
+  &__progress-section {
+    margin: 0.6em 0;
+  }
+
+  &__quota-text {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 0.35em;
+    color: var(--primary-medium);
+  }
+
+  &__numbers {
+    font-weight: 600;
+    color: var(--primary);
+  }
+
+  &__progress-bar {
+    height: 8px;
+    background: var(--primary-low);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+
+  &__progress-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.3s ease;
+
+    &.normal {
+      background: var(--success);
+    }
+
+    &.warning {
+      background: var(--highlight);
+    }
+
+    &.critical {
+      background: var(--danger);
+    }
+  }
+
+  &__reset-hint {
+    margin-top: 0.6em;
+    padding-top: 0.5em;
+    border-top: 1px solid var(--primary-low);
+    color: var(--primary-low-mid);
+    font-size: var(--font-down-2);
+    display: flex;
+    align-items: center;
+    gap: 0.4em;
+
+    .d-icon {
+      font-size: var(--font-down-2);
+    }
+  }
+
+  &__loading {
+    display: flex;
+    justify-content: center;
+    padding: 1.5em 0;
+  }
+
+  &__error {
+    text-align: center;
+    padding: 1em 0;
+    color: var(--danger);
+
+    .btn {
+      margin-top: 0.5em;
+    }
+  }
+}

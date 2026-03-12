@@ -1,0 +1,26 @@
+discourse_zotero_bridge:
+  discourse_zotero_bridge_enabled:
+    default: false
+    client: true
+  zotero_bridge_llm_endpoint:
+    default: ""
+  zotero_bridge_llm_api_key:
+    default: ""
+    secret: true
+  zotero_bridge_llm_model_name:
+    default: "gpt-4o"
+  zotero_bridge_daily_quota_tl0:
+    default: 10
+    min: 0
+  zotero_bridge_daily_quota_tl1:
+    default: 30
+    min: 0
+  zotero_bridge_daily_quota_tl2:
+    default: 100
+    min: 0
+  zotero_bridge_daily_quota_tl3:
+    default: 300
+    min: 0
+  zotero_bridge_daily_quota_tl4:
+    default: 1000
+    min: 0

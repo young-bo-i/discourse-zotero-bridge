@@ -1,0 +1,12 @@
+zh_CN:
+  js:
+    zotero_bridge:
+      header_title: "Zotero Bridge 使用情况"
+      panel_title: "Zotero Bridge"
+      username: "用户名"
+      trust_level: "信任等级"
+      used_today: "今日已使用"
+      remaining: "剩余"
+      reset_hint: "配额每日 UTC 0 点重置"
+      load_error: "加载使用数据失败"
+      retry: "重试"
