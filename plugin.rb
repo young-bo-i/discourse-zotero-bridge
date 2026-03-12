@@ -12,6 +12,9 @@ enabled_site_setting :discourse_zotero_bridge_enabled
 register_asset "stylesheets/zotero-bridge-panel.scss"
 
 register_svg_icon "chart-bar"
+register_svg_icon "fab-github"
+register_svg_icon "download"
+register_svg_icon "plug"
 
 module ::DiscourseZoteroBridge
   PLUGIN_NAME = "discourse-zotero-bridge"

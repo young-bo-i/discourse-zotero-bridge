@@ -1,18 +1,21 @@
 import { withPluginApi } from "discourse/lib/plugin-api";
-import ZoteroBridgeHeaderIcon from "../components/zotero-bridge-header-icon";
+import ZoteroBridgeUserMenuPanel from "../components/zotero-bridge-user-menu-panel";
 
 export default {
-  name: "zotero-bridge-header",
+  name: "zotero-bridge-user-menu",
 
-  initialize(container) {
-    const siteSettings = container.lookup("service:site-settings");
-    if (!siteSettings.discourse_zotero_bridge_enabled) {
-      return;
-    }
-
+  initialize() {
     withPluginApi((api) => {
-      api.headerIcons.add("zotero-bridge", ZoteroBridgeHeaderIcon, {
-        before: "search",
+      api.registerUserMenuTab((UserMenuTab) => {
+        return class extends UserMenuTab {
+          id = "zotero-bridge";
+          panelComponent = ZoteroBridgeUserMenuPanel;
+          icon = "chart-bar";
+
+          get shouldDisplay() {
+            return this.siteSettings.discourse_zotero_bridge_enabled;
+          }
+        };
       });
     });
   },
