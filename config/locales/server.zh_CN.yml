@@ -6,7 +6,7 @@ zh_CN:
     zotero_bridge_llm_api_format_openai: "OpenAI（/v1/chat/completions）"
     zotero_bridge_llm_api_format_anthropic: "Anthropic（/v1/messages）"
     zotero_bridge_llm_api_format_custom: "自定义（手动指定路径）"
-    zotero_bridge_llm_custom_path: "自定义 API 路径（仅在格式为"自定义"时使用）"
+    zotero_bridge_llm_custom_path: '自定义 API 路径（仅在格式为「自定义」时使用）'
     zotero_bridge_llm_api_key: "LLM API 密钥（机密）"
     zotero_bridge_llm_model_name: "默认 LLM 模型名称"
     zotero_bridge_daily_quota_tl0: "信任等级 0 用户每日请求配额"
