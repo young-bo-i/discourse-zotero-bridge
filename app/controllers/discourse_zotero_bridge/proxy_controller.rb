@@ -9,8 +9,28 @@ module DiscourseZoteroBridge
 
     CRLF = "\r\n"
     LLM_TIMEOUT = 120
+    MAX_CONCURRENT_STREAMS = 20
 
     API_FORMAT_PATHS = { "openai" => "/v1/chat/completions", "anthropic" => "/v1/messages" }.freeze
+
+    @active_streams = 0
+    @stream_mutex = Mutex.new
+
+    def self.acquire_stream_slot
+      @stream_mutex.synchronize do
+        return false if @active_streams >= MAX_CONCURRENT_STREAMS
+        @active_streams += 1
+        true
+      end
+    end
+
+    def self.release_stream_slot
+      @stream_mutex.synchronize { @active_streams -= 1 }
+    end
+
+    def self.active_stream_count
+      @stream_mutex.synchronize { @active_streams }
+    end
 
     def chat_completions
       body = parse_request_body
@@ -83,10 +103,11 @@ module DiscourseZoteroBridge
     end
 
     def non_stream_proxy(uri, body)
+      outbound_headers = llm_headers
       hijack do
         begin
           payload = body.to_json
-          req = Net::HTTP::Post.new(uri, llm_headers)
+          req = Net::HTTP::Post.new(uri, outbound_headers)
           req.body = payload
 
           response =
@@ -118,12 +139,20 @@ module DiscourseZoteroBridge
     end
 
     def stream_proxy(uri, body)
+      unless self.class.acquire_stream_slot
+        return(
+          render json: { error: I18n.t("zotero_bridge.errors.service_busy") }, status: 503
+        )
+      end
+
       io = request.env["rack.hijack"].call
+      cors_origin = request.env["HTTP_ORIGIN"]
+      outbound_headers = llm_headers
 
       Thread.new do
         begin
           payload = body.merge("stream" => true).to_json
-          req = Net::HTTP::Post.new(uri, llm_headers)
+          req = Net::HTTP::Post.new(uri, outbound_headers)
           req.body = payload
 
           Net::HTTP.start(
@@ -135,7 +164,7 @@ module DiscourseZoteroBridge
           ) do |http|
             http.request(req) do |response|
               if response.code.to_i >= 200 && response.code.to_i < 300
-                write_stream_headers(io)
+                write_stream_headers(io, cors_origin)
                 response.read_body do |chunk|
                   write_raw_chunk(io, chunk)
                 end
@@ -157,6 +186,7 @@ module DiscourseZoteroBridge
           rescue StandardError
           end
         ensure
+          self.class.release_stream_slot
           begin
             io.close
           rescue StandardError
@@ -167,7 +197,7 @@ module DiscourseZoteroBridge
       render plain: "", status: 418
     end
 
-    def write_stream_headers(io)
+    def write_stream_headers(io, cors_origin = nil)
       io.write "HTTP/1.1 200 OK"
       io.write CRLF
       io.write "Content-Type: text/event-stream; charset=utf-8"
@@ -182,7 +212,6 @@ module DiscourseZoteroBridge
       io.write CRLF
       io.write "X-Content-Type-Options: nosniff"
       io.write CRLF
-      cors_origin = request.env["HTTP_ORIGIN"]
       if cors_origin.present?
         io.write "Access-Control-Allow-Origin: #{cors_origin}"
         io.write CRLF

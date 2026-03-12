@@ -12,6 +12,8 @@ module DiscourseZoteroBridge
 
     def self.today_for(user)
       find_or_create_by(user_id: user.id, used_on: Date.current)
+    rescue ActiveRecord::RecordNotUnique
+      retry
     end
 
     def self.daily_quota_for(user)

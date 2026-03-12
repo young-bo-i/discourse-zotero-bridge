@@ -25,4 +25,15 @@ after_initialize do
     methods: %i[get post],
     actions: %w[discourse_zotero_bridge/config#usage discourse_zotero_bridge/proxy#chat_completions],
   )
+
+  module ::Jobs
+    class CleanUpZoteroBridgeUsageLogs < ::Jobs::Scheduled
+      every 1.day
+
+      def execute(args)
+        return unless SiteSetting.discourse_zotero_bridge_enabled
+        DiscourseZoteroBridge::UsageLog.where("used_on < ?", 90.days.ago).delete_all
+      end
+    end
+  end
 end
