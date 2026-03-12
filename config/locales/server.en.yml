@@ -1,7 +1,12 @@
 en:
   site_settings:
     discourse_zotero_bridge_enabled: "Enable the Zotero Bridge plugin"
-    zotero_bridge_llm_endpoint: "LLM API endpoint URL"
+    zotero_bridge_llm_base_url: "LLM API base URL (e.g. https://api.openai.com)"
+    zotero_bridge_llm_api_format: "LLM API format. The endpoint path is auto-completed based on format."
+    zotero_bridge_llm_api_format_openai: "OpenAI (/v1/chat/completions)"
+    zotero_bridge_llm_api_format_anthropic: "Anthropic (/v1/messages)"
+    zotero_bridge_llm_api_format_custom: "Custom (specify path manually)"
+    zotero_bridge_llm_custom_path: "Custom API path (only used when format is 'custom')"
     zotero_bridge_llm_api_key: "LLM API key (secret)"
     zotero_bridge_llm_model_name: "Default LLM model name"
     zotero_bridge_daily_quota_tl0: "Daily request quota for Trust Level 0 users"

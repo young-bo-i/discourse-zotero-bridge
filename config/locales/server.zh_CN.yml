@@ -1,7 +1,12 @@
 zh_CN:
   site_settings:
     discourse_zotero_bridge_enabled: "启用 Zotero Bridge 插件"
-    zotero_bridge_llm_endpoint: "LLM API 端点 URL"
+    zotero_bridge_llm_base_url: "LLM API 主端点（如 https://api.openai.com）"
+    zotero_bridge_llm_api_format: "LLM 接口格式，根据格式自动补全端点路径"
+    zotero_bridge_llm_api_format_openai: "OpenAI（/v1/chat/completions）"
+    zotero_bridge_llm_api_format_anthropic: "Anthropic（/v1/messages）"
+    zotero_bridge_llm_api_format_custom: "自定义（手动指定路径）"
+    zotero_bridge_llm_custom_path: "自定义 API 路径（仅在格式为"自定义"时使用）"
     zotero_bridge_llm_api_key: "LLM API 密钥（机密）"
     zotero_bridge_llm_model_name: "默认 LLM 模型名称"
     zotero_bridge_daily_quota_tl0: "信任等级 0 用户每日请求配额"

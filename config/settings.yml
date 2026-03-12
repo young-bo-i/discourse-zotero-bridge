@@ -2,7 +2,16 @@ discourse_zotero_bridge:
   discourse_zotero_bridge_enabled:
     default: false
     client: true
-  zotero_bridge_llm_endpoint:
+  zotero_bridge_llm_base_url:
+    default: "https://api.openai.com"
+  zotero_bridge_llm_api_format:
+    default: "openai"
+    type: enum
+    choices:
+      - openai
+      - anthropic
+      - custom
+  zotero_bridge_llm_custom_path:
     default: ""
   zotero_bridge_llm_api_key:
     default: ""

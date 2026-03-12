@@ -1,4 +1,9 @@
 en:
+  admin_js:
+    admin:
+      site_settings:
+        categories:
+          discourse_zotero_bridge: "Zotero Bridge"
   js:
     zotero_bridge:
       header_title: "Zotero Bridge Usage"

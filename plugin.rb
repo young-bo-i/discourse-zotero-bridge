@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
 # name: discourse-zotero-bridge
-# about: Provides LLM configuration to Zotero browser extension via authenticated API
-# version: 0.1.0
+# about: Proxies LLM requests for Zotero browser extension with per-user daily quota
+# version: 0.2.0
 # authors: Discourse
 # url: https://github.com/discourse/discourse-zotero-bridge
 # meta_topic_id: 0
@@ -22,7 +22,7 @@ require_relative "lib/discourse_zotero_bridge/engine"
 after_initialize do
   add_user_api_key_scope(
     :zotero_bridge,
-    methods: :get,
-    actions: %w[discourse_zotero_bridge/config#show discourse_zotero_bridge/config#usage],
+    methods: %i[get post],
+    actions: %w[discourse_zotero_bridge/config#usage discourse_zotero_bridge/proxy#chat_completions],
   )
 end
