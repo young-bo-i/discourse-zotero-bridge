@@ -7,15 +7,15 @@ en:
   js:
     user_menu:
       tabs:
-        zotero_bridge: "Zotero Bridge"
+        zotero_bridge: "Zotero Plugin"
     zotero_bridge:
-      panel_title: "Zotero Bridge"
+      panel_title: "Zotero Plugin"
       username: "Username"
       trust_level: "Trust Level"
       trust_level_badge: "TL%{level}"
       used_today: "Used Today"
       remaining: "Remaining"
-      reset_hint: "Quota resets daily at midnight (UTC)"
+      reset_hint: "Quota resets daily at midnight"
       load_error: "Failed to load usage data"
       retry: "Retry"
       zotero_plugin: "Zotero Plugin"

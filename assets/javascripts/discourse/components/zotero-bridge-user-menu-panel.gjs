@@ -9,8 +9,7 @@ import { popupAjaxError } from "discourse/lib/ajax-error";
 import { i18n } from "discourse-i18n";
 
 const GITHUB_URL = "https://github.com/young-bo-i/zotero-enterscholar";
-const RELEASES_URL =
-  "https://github.com/young-bo-i/zotero-enterscholar/releases";
+const DOWNLOAD_URL = "/zotero-bridge/download/latest";
 
 export default class ZoteroBridgeUserMenuPanel extends Component {
   @service currentUser;
@@ -151,9 +150,7 @@ export default class ZoteroBridgeUserMenuPanel extends Component {
           <span>{{i18n "zotero_bridge.github_project"}}</span>
         </a>
         <a
-          href={{RELEASES_URL}}
-          target="_blank"
-          rel="noopener noreferrer"
+          href={{DOWNLOAD_URL}}
           class="zotero-bridge-panel__link"
         >
           {{icon "download"}}

@@ -21,3 +21,4 @@ en:
     errors:
       quota_exceeded: "Daily request quota exceeded. Please try again tomorrow."
       service_busy: "Service is currently busy. Please try again shortly."
+      download_unavailable: "Plugin download is currently unavailable. Please try again later."

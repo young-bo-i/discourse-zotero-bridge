@@ -2,6 +2,7 @@
 
 DiscourseZoteroBridge::Engine.routes.draw do
   get "/usage" => "config#usage"
+  get "/download/latest" => "config#download_latest"
   post "/v1/chat/completions" => "proxy#chat_completions"
 end
 

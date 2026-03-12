@@ -7,15 +7,15 @@ zh_CN:
   js:
     user_menu:
       tabs:
-        zotero_bridge: "Zotero Bridge"
+        zotero_bridge: "Zotero 插件"
     zotero_bridge:
-      panel_title: "Zotero Bridge"
+      panel_title: "Zotero 插件"
       username: "用户名"
       trust_level: "信任等级"
       trust_level_badge: "TL%{level}"
       used_today: "今日已使用"
       remaining: "剩余"
-      reset_hint: "配额每日 UTC 0 点重置"
+      reset_hint: "配额每日 0 点重置"
       load_error: "加载使用数据失败"
       retry: "重试"
       zotero_plugin: "Zotero 插件"
