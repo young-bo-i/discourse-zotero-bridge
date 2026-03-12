@@ -3,7 +3,7 @@
 class CreateZoteroBridgeUsageLogs < ActiveRecord::Migration[7.2]
   def change
     create_table :zotero_bridge_usage_logs do |t|
-      t.integer :user_id, null: false
+      t.references :user, null: false, foreign_key: true
       t.date :used_on, null: false
       t.integer :request_count, default: 0, null: false
       t.timestamps

@@ -20,13 +20,15 @@ module DiscourseZoteroBridge
     end
 
     def self.increment_and_check!(user)
-      log = today_for(user)
       quota = daily_quota_for(user)
+      log = today_for(user)
 
-      return { allowed: false, used: log.request_count, quota: quota } if log.request_count >= quota
+      log.with_lock do
+        return { allowed: false, used: log.request_count, quota: quota } if log.request_count >= quota
 
-      log.increment!(:request_count)
-      { allowed: true, used: log.request_count, quota: quota }
+        log.increment!(:request_count)
+        { allowed: true, used: log.request_count, quota: quota }
+      end
     end
 
     def self.usage_summary(user)

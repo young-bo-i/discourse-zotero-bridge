@@ -5,6 +5,7 @@ en:
       panel_title: "Zotero Bridge"
       username: "Username"
       trust_level: "Trust Level"
+      trust_level_badge: "TL%{level}"
       used_today: "Used Today"
       remaining: "Remaining"
       reset_hint: "Quota resets daily at midnight (UTC)"

@@ -5,6 +5,7 @@ zh_CN:
       panel_title: "Zotero Bridge"
       username: "用户名"
       trust_level: "信任等级"
+      trust_level_badge: "TL%{level}"
       used_today: "今日已使用"
       remaining: "剩余"
       reset_hint: "配额每日 UTC 0 点重置"

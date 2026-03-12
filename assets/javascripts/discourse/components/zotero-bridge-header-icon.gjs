@@ -103,7 +103,10 @@ export default class ZoteroBridgeHeaderIcon extends Component {
                   <span class="zotero-bridge-panel__label">{{i18n
                       "zotero_bridge.trust_level"
                     }}</span>
-                  <span class="zotero-bridge-panel__value zotero-bridge-panel__tl-badge">TL{{this.usageData.trust_level}}</span>
+                  <span class="zotero-bridge-panel__value zotero-bridge-panel__tl-badge">{{i18n
+                      "zotero_bridge.trust_level_badge"
+                      level=this.usageData.trust_level
+                    }}</span>
                 </div>
 
                 <div class="zotero-bridge-panel__progress-section">
