@@ -151,6 +151,8 @@ export default class ZoteroBridgeUserMenuPanel extends Component {
         </a>
         <a
           href={{DOWNLOAD_URL}}
+          download
+          data-auto-route="true"
           class="zotero-bridge-panel__link"
         >
           {{icon "download"}}
