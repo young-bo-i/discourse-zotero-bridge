@@ -14,6 +14,9 @@ en:
     zotero_bridge_daily_quota_tl2: "Daily request quota for Trust Level 2 users"
     zotero_bridge_daily_quota_tl3: "Daily request quota for Trust Level 3 users"
     zotero_bridge_daily_quota_tl4: "Daily request quota for Trust Level 4 users"
+  user_api_key:
+    scopes:
+      "discourse-zotero-bridge:zotero_bridge": "Access Zotero Bridge (LLM proxy and usage quota)"
   zotero_bridge:
     errors:
       quota_exceeded: "Daily request quota exceeded. Please try again tomorrow."

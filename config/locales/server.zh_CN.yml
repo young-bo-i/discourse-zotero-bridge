@@ -14,6 +14,9 @@ zh_CN:
     zotero_bridge_daily_quota_tl2: "信任等级 2 用户每日请求配额"
     zotero_bridge_daily_quota_tl3: "信任等级 3 用户每日请求配额"
     zotero_bridge_daily_quota_tl4: "信任等级 4 用户每日请求配额"
+  user_api_key:
+    scopes:
+      "discourse-zotero-bridge:zotero_bridge": "访问 Zotero Bridge（LLM 代理和使用配额）"
   zotero_bridge:
     errors:
       quota_exceeded: "每日请求配额已用完，请明天再试。"
