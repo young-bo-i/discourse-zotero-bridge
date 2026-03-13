@@ -14,6 +14,8 @@ en:
     zotero_bridge_daily_quota_tl2: "Daily request quota for Trust Level 2 users"
     zotero_bridge_daily_quota_tl3: "Daily request quota for Trust Level 3 users"
     zotero_bridge_daily_quota_tl4: "Daily request quota for Trust Level 4 users"
+    zotero_bridge_extra_quota_amount: "Number of extra requests granted per extra quota request"
+    zotero_bridge_max_extra_requests_per_day: "Maximum number of extra quota requests a user can make per day"
   user_api_key:
     scopes:
       "discourse-zotero-bridge:zotero_bridge": "Access Zotero Bridge (LLM proxy and usage quota)"
@@ -29,3 +31,4 @@ en:
       llm_timeout: "LLM service timeout."
       proxy_error: "Proxy error."
       streaming_not_supported: "Streaming not supported."
+      extra_quota_limit_reached: "You have reached the maximum number of extra quota requests for today."

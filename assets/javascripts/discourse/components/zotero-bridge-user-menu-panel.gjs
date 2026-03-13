@@ -17,6 +17,7 @@ export default class ZoteroBridgeUserMenuPanel extends Component {
   @tracked usageData = null;
   @tracked loading = false;
   @tracked error = null;
+  @tracked requestingExtra = false;
 
   constructor() {
     super(...arguments);
@@ -46,6 +47,14 @@ export default class ZoteroBridgeUserMenuPanel extends Component {
     return "normal";
   }
 
+  get quotaExhausted() {
+    return this.usageData && this.usageData.remaining === 0;
+  }
+
+  get showExtraButton() {
+    return this.quotaExhausted && this.usageData?.can_request_extra;
+  }
+
   @action
   async loadUsage() {
     this.loading = true;
@@ -57,6 +66,23 @@ export default class ZoteroBridgeUserMenuPanel extends Component {
       popupAjaxError(e);
     } finally {
       this.loading = false;
+    }
+  }
+
+  @action
+  async requestExtraQuota() {
+    this.requestingExtra = true;
+    try {
+      const result = await ajax("/zotero-bridge/request_extra_quota", {
+        type: "POST",
+      });
+      if (result.success) {
+        await this.loadUsage();
+      }
+    } catch (e) {
+      popupAjaxError(e);
+    } finally {
+      this.requestingExtra = false;
     }
   }
 
@@ -137,6 +163,30 @@ export default class ZoteroBridgeUserMenuPanel extends Component {
           {{icon "clock"}}
           {{i18n "zotero_bridge.reset_hint"}}
         </div>
+
+        {{#if this.quotaExhausted}}
+          <div class="zotero-bridge-panel__extra-quota">
+            {{#if this.showExtraButton}}
+              <div class="zotero-bridge-panel__extra-hint">
+                {{i18n
+                  "zotero_bridge.extra_quota_hint"
+                  used=this.usageData.extra_requests_used
+                  max=this.usageData.extra_requests_max
+                }}
+              </div>
+              <DButton
+                @action={{this.requestExtraQuota}}
+                @label="zotero_bridge.request_extra_quota"
+                @disabled={{this.requestingExtra}}
+                class="btn-primary zotero-bridge-panel__extra-btn"
+              />
+            {{else}}
+              <div class="zotero-bridge-panel__extra-exhausted">
+                {{i18n "zotero_bridge.extra_quota_exhausted"}}
+              </div>
+            {{/if}}
+          </div>
+        {{/if}}
       {{/if}}
 
       <div class="zotero-bridge-panel__links">

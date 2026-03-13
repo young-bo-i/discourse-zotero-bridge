@@ -26,7 +26,11 @@ after_initialize do
   add_user_api_key_scope(
     :zotero_bridge,
     methods: %i[get post],
-    actions: %w[discourse_zotero_bridge/config#usage discourse_zotero_bridge/proxy#chat_completions],
+    actions: %w[
+      discourse_zotero_bridge/config#usage
+      discourse_zotero_bridge/config#request_extra_quota
+      discourse_zotero_bridge/proxy#chat_completions
+    ],
   )
 
   module ::Jobs

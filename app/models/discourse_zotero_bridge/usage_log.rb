@@ -25,9 +25,13 @@ module DiscourseZoteroBridge
       SiteSetting.public_send("zotero_bridge_daily_quota_tl#{tl}")
     end
 
+    def self.effective_quota_for(user)
+      log = today_for(user)
+      daily_quota_for(user) + log.extra_quota_granted
+    end
+
     def self.increment_and_check!(user)
-      quota = daily_quota_for(user)
-      today_for(user)
+      quota = effective_quota_for(user)
 
       updated =
         where(user_id: user.id, used_on: Date.current).where(
@@ -44,15 +48,45 @@ module DiscourseZoteroBridge
       end
     end
 
+    def self.request_extra_quota!(user)
+      log = today_for(user)
+      max_requests = SiteSetting.zotero_bridge_max_extra_requests_per_day
+      extra_amount = SiteSetting.zotero_bridge_extra_quota_amount
+
+      if log.extra_requests_count >= max_requests
+        return { success: false, reason: :max_requests_reached }
+      end
+
+      log.with_lock do
+        if log.extra_requests_count >= max_requests
+          return { success: false, reason: :max_requests_reached }
+        end
+
+        log.update!(
+          extra_quota_granted: log.extra_quota_granted + extra_amount,
+          extra_requests_count: log.extra_requests_count + 1,
+        )
+
+        { success: true, extra_granted: extra_amount }
+      end
+    end
+
     def self.usage_summary(user)
       log = today_for(user)
-      quota = daily_quota_for(user)
+      base_quota = daily_quota_for(user)
+      total_quota = base_quota + log.extra_quota_granted
+      max_extra = SiteSetting.zotero_bridge_max_extra_requests_per_day
 
       {
         trust_level: user.trust_level,
-        daily_quota: quota,
+        daily_quota: total_quota,
+        base_quota: base_quota,
         used_today: log.request_count,
-        remaining: [quota - log.request_count, 0].max,
+        remaining: [total_quota - log.request_count, 0].max,
+        extra_quota_granted: log.extra_quota_granted,
+        extra_requests_used: log.extra_requests_count,
+        extra_requests_max: max_extra,
+        can_request_extra: log.extra_requests_count < max_extra,
       }
     end
   end

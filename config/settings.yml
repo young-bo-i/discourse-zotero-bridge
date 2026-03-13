@@ -33,3 +33,10 @@ discourse_zotero_bridge:
   zotero_bridge_daily_quota_tl4:
     default: 1000
     min: 0
+  zotero_bridge_extra_quota_amount:
+    default: 50
+    min: 1
+  zotero_bridge_max_extra_requests_per_day:
+    default: 3
+    min: 0
+    max: 10

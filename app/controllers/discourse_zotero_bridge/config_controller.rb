@@ -20,10 +20,38 @@ module DiscourseZoteroBridge
       render json: {
                trust_level: summary[:trust_level],
                daily_quota: summary[:daily_quota],
+               base_quota: summary[:base_quota],
                used_today: summary[:used_today],
                remaining: summary[:remaining],
+               extra_quota_granted: summary[:extra_quota_granted],
+               extra_requests_used: summary[:extra_requests_used],
+               extra_requests_max: summary[:extra_requests_max],
+               can_request_extra: summary[:can_request_extra],
                username: current_user.username,
              }
+    end
+
+    def request_extra_quota
+      result = UsageLog.request_extra_quota!(current_user)
+
+      if result[:success]
+        summary = UsageLog.usage_summary(current_user)
+        render json: {
+                 success: true,
+                 extra_granted: result[:extra_granted],
+                 daily_quota: summary[:daily_quota],
+                 remaining: summary[:remaining],
+                 extra_requests_used: summary[:extra_requests_used],
+                 extra_requests_max: summary[:extra_requests_max],
+                 can_request_extra: summary[:can_request_extra],
+               }
+      else
+        render json: {
+                 success: false,
+                 error: I18n.t("zotero_bridge.errors.extra_quota_limit_reached"),
+               },
+               status: 429
+      end
     end
 
     def download_latest

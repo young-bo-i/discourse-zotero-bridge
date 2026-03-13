@@ -122,6 +122,30 @@
     }
   }
 
+  &__extra-quota {
+    margin-top: 0.6em;
+    padding: 0.6em;
+    border-radius: 0.35em;
+    background: var(--danger-low);
+    text-align: center;
+  }
+
+  &__extra-hint {
+    font-size: var(--font-down-1);
+    color: var(--primary-medium);
+    margin-bottom: 0.5em;
+  }
+
+  &__extra-btn {
+    width: 100%;
+  }
+
+  &__extra-exhausted {
+    font-size: var(--font-down-1);
+    color: var(--danger);
+    font-weight: 600;
+  }
+
   &__links {
     margin-top: 0.6em;
     padding-top: 0.6em;
