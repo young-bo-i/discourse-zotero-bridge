@@ -1,7 +1,30 @@
+// User menu tab: replace SVG icon with custom logo
+.user-menu .tabs-list [data-tab-id="zotero-bridge"] {
+  .d-icon {
+    display: none;
+  }
+
+  &::before {
+    content: "";
+    display: inline-block;
+    width: 1.15em;
+    height: 1.15em;
+    background: url("/plugins/discourse-zotero-bridge/images/logo.png") center /
+      contain no-repeat;
+    vertical-align: middle;
+  }
+}
+
 .zotero-bridge-panel {
   padding: 0.75em 1em;
   min-width: 260px;
   font-size: var(--font-down-1);
+
+  &__logo {
+    width: 22px;
+    height: 22px;
+    object-fit: contain;
+  }
 
   &__header {
     display: flex;
@@ -11,10 +34,6 @@
     font-size: var(--font-up-1);
     margin-bottom: 0.75em;
     color: var(--primary);
-
-    .d-icon {
-      color: var(--tertiary);
-    }
   }
 
   &__user,

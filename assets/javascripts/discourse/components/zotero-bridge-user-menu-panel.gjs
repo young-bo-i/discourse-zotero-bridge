@@ -63,7 +63,11 @@ export default class ZoteroBridgeUserMenuPanel extends Component {
   <template>
     <div class="zotero-bridge-panel">
       <div class="zotero-bridge-panel__header">
-        {{icon "chart-bar"}}
+        <img
+          src="/plugins/discourse-zotero-bridge/images/logo.png"
+          alt=""
+          class="zotero-bridge-panel__logo"
+        />
         <span>{{i18n "zotero_bridge.panel_title"}}</span>
       </div>
 
