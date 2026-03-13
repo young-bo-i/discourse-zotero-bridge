@@ -10,26 +10,30 @@ module DiscourseZoteroBridge
     CRLF = "\r\n"
     LLM_TIMEOUT = 120
     MAX_CONCURRENT_STREAMS = 20
+    MAX_BODY_SIZE = 1.megabyte
 
     API_FORMAT_PATHS = { "openai" => "/v1/chat/completions", "anthropic" => "/v1/messages" }.freeze
 
-    @active_streams = 0
-    @stream_mutex = Mutex.new
+    STREAM_COUNTER_KEY = "zotero_bridge:active_streams"
+    STREAM_SLOT_TTL = LLM_TIMEOUT + 30
 
     def self.acquire_stream_slot
-      @stream_mutex.synchronize do
-        return false if @active_streams >= MAX_CONCURRENT_STREAMS
-        @active_streams += 1
-        true
+      current = Discourse.redis.incr(STREAM_COUNTER_KEY)
+      if current > MAX_CONCURRENT_STREAMS
+        Discourse.redis.decr(STREAM_COUNTER_KEY)
+        return false
       end
+      Discourse.redis.expire(STREAM_COUNTER_KEY, STREAM_SLOT_TTL)
+      true
     end
 
     def self.release_stream_slot
-      @stream_mutex.synchronize { @active_streams -= 1 }
+      val = Discourse.redis.decr(STREAM_COUNTER_KEY)
+      Discourse.redis.del(STREAM_COUNTER_KEY) if val <= 0
     end
 
     def self.active_stream_count
-      @stream_mutex.synchronize { @active_streams }
+      Discourse.redis.get(STREAM_COUNTER_KEY).to_i
     end
 
     def chat_completions
@@ -62,16 +66,27 @@ module DiscourseZoteroBridge
     private
 
     def parse_request_body
-      body = JSON.parse(request.body.read)
+      if request.content_length.to_i > MAX_BODY_SIZE
+        render json: { error: I18n.t("zotero_bridge.errors.body_too_large") }, status: 413
+        return nil
+      end
+
+      raw = request.body.read(MAX_BODY_SIZE + 1)
+      if raw.nil? || raw.bytesize > MAX_BODY_SIZE
+        render json: { error: I18n.t("zotero_bridge.errors.body_too_large") }, status: 413
+        return nil
+      end
+
+      body = JSON.parse(raw)
 
       if !body.is_a?(Hash) || !body["messages"].is_a?(Array)
-        render json: { error: "Invalid request: messages array is required" }, status: 400
+        render json: { error: I18n.t("zotero_bridge.errors.invalid_messages") }, status: 400
         return nil
       end
 
       body
     rescue JSON::ParserError
-      render json: { error: "Invalid JSON body" }, status: 400
+      render json: { error: I18n.t("zotero_bridge.errors.invalid_json") }, status: 400
       nil
     end
 
@@ -123,17 +138,17 @@ module DiscourseZoteroBridge
             render json: response.body, status: response.code.to_i
           else
             render json: {
-                     error: "LLM service error",
+                     error: I18n.t("zotero_bridge.errors.llm_service_error"),
                      status: response.code.to_i,
                      details: safe_error_body(response.body),
                    },
                    status: 502
           end
         rescue Net::OpenTimeout, Net::ReadTimeout
-          render json: { error: "LLM service timeout" }, status: 504
+          render json: { error: I18n.t("zotero_bridge.errors.llm_timeout") }, status: 504
         rescue StandardError => e
           Rails.logger.error("ZoteroBridge proxy error: #{e.message}")
-          render json: { error: "Proxy error" }, status: 502
+          render json: { error: I18n.t("zotero_bridge.errors.proxy_error") }, status: 502
         end
       end
     end
@@ -145,56 +160,58 @@ module DiscourseZoteroBridge
         )
       end
 
-      io = request.env["rack.hijack"].call
-      cors_origin = request.env["HTTP_ORIGIN"]
-      outbound_headers = llm_headers
-
-      Thread.new do
-        begin
-          payload = body.merge("stream" => true).to_json
-          req = Net::HTTP::Post.new(uri, outbound_headers)
-          req.body = payload
-
-          Net::HTTP.start(
-            uri.host,
-            uri.port,
-            use_ssl: uri.scheme == "https",
-            read_timeout: LLM_TIMEOUT,
-            open_timeout: 30,
-          ) do |http|
-            http.request(req) do |response|
-              if response.code.to_i >= 200 && response.code.to_i < 300
-                write_stream_headers(io, cors_origin)
-                response.read_body do |chunk|
-                  write_raw_chunk(io, chunk)
-                end
-                finish_chunks(io)
-              else
-                error_body = response.body
-                write_error_response(io, 502, safe_error_body(error_body))
-              end
-            end
-          end
-        rescue Net::OpenTimeout, Net::ReadTimeout
-          write_error_response(io, 504, "LLM service timeout")
-        rescue Errno::EPIPE, IOError
-          # client disconnected
-        rescue StandardError => e
-          Rails.logger.error("ZoteroBridge stream error: #{e.message}")
-          begin
-            write_error_response(io, 502, "Proxy error")
-          rescue StandardError
-          end
-        ensure
-          self.class.release_stream_slot
-          begin
-            io.close
-          rescue StandardError
-          end
-        end
+      hijacker = request.env["rack.hijack"]
+      unless hijacker
+        self.class.release_stream_slot
+        return render json: { error: I18n.t("zotero_bridge.errors.streaming_not_supported") }, status: 500
       end
 
-      render plain: "", status: 418
+      io = hijacker.call
+      cors_origin = request.env["HTTP_ORIGIN"]
+      outbound_headers = llm_headers
+      timeout_msg = I18n.t("zotero_bridge.errors.llm_timeout")
+      proxy_err_msg = I18n.t("zotero_bridge.errors.proxy_error")
+
+      thread =
+        Thread.new do
+          begin
+            payload = body.merge("stream" => true).to_json
+            req = Net::HTTP::Post.new(uri, outbound_headers)
+            req.body = payload
+
+            Net::HTTP.start(
+              uri.host,
+              uri.port,
+              use_ssl: uri.scheme == "https",
+              read_timeout: LLM_TIMEOUT,
+              open_timeout: 30,
+            ) do |http|
+              http.request(req) do |response|
+                if response.code.to_i >= 200 && response.code.to_i < 300
+                  write_stream_headers(io, cors_origin)
+                  response.read_body { |chunk| write_raw_chunk(io, chunk) }
+                  finish_chunks(io)
+                else
+                  error_body = response.body
+                  write_error_response(io, 502, safe_error_body(error_body))
+                end
+              end
+            end
+          rescue Net::OpenTimeout, Net::ReadTimeout
+            write_error_response(io, 504, timeout_msg)
+          rescue Errno::EPIPE, IOError
+            # client disconnected
+          rescue StandardError => e
+            Rails.logger.error("ZoteroBridge stream error: #{e.class} - #{e.message}")
+            write_error_response(io, 502, proxy_err_msg) rescue nil
+          ensure
+            self.class.release_stream_slot
+            io&.close rescue nil
+          end
+        end
+      thread.name = "zotero-bridge-stream"
+
+      head 200
     end
 
     def write_stream_headers(io, cors_origin = nil)
@@ -212,7 +229,7 @@ module DiscourseZoteroBridge
       io.write CRLF
       io.write "X-Content-Type-Options: nosniff"
       io.write CRLF
-      if cors_origin.present?
+      if cors_origin.present? && valid_cors_origin?(cors_origin)
         io.write "Access-Control-Allow-Origin: #{cors_origin}"
         io.write CRLF
         io.write "Access-Control-Allow-Credentials: true"
@@ -220,6 +237,14 @@ module DiscourseZoteroBridge
       end
       io.write CRLF
       io.flush
+    end
+
+    def valid_cors_origin?(origin)
+      allowed = URI.parse(Discourse.base_url)
+      requested = URI.parse(origin)
+      allowed.scheme == requested.scheme && allowed.host == requested.host && allowed.port == requested.port
+    rescue URI::InvalidURIError
+      false
     end
 
     def write_raw_chunk(io, data)

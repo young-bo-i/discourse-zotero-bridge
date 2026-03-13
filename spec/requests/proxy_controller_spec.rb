@@ -131,7 +131,7 @@ RSpec.describe DiscourseZoteroBridge::ProxyController do
            headers: { "CONTENT_TYPE" => "application/json" }
 
       expect(response.status).to eq(502)
-      expect(response.parsed_body["error"]).to eq("LLM service error")
+      expect(response.parsed_body["error"]).to eq(I18n.t("zotero_bridge.errors.llm_service_error"))
     end
 
     it "returns 404 when plugin is disabled" do

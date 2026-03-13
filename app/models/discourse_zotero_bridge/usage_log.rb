@@ -16,20 +16,31 @@ module DiscourseZoteroBridge
       retry
     end
 
+    VALID_TRUST_LEVELS = (0..4).freeze
+
     def self.daily_quota_for(user)
-      setting_name = "zotero_bridge_daily_quota_tl#{user.trust_level}"
-      SiteSetting.public_send(setting_name)
+      tl = user.trust_level
+      raise ArgumentError, "Invalid trust level: #{tl}" unless VALID_TRUST_LEVELS.include?(tl)
+
+      SiteSetting.public_send("zotero_bridge_daily_quota_tl#{tl}")
     end
 
     def self.increment_and_check!(user)
       quota = daily_quota_for(user)
-      log = today_for(user)
+      today_for(user)
 
-      log.with_lock do
-        return { allowed: false, used: log.request_count, quota: quota } if log.request_count >= quota
+      updated =
+        where(user_id: user.id, used_on: Date.current).where(
+          "request_count < ?",
+          quota,
+        ).update_all(["request_count = request_count + 1, updated_at = ?", Time.current])
 
-        log.increment!(:request_count)
-        { allowed: true, used: log.request_count, quota: quota }
+      current_count = where(user_id: user.id, used_on: Date.current).pick(:request_count) || 0
+
+      if updated > 0
+        { allowed: true, used: current_count, quota: quota }
+      else
+        { allowed: false, used: current_count, quota: quota }
       end
     end
 

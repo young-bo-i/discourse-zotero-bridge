@@ -35,7 +35,7 @@ after_initialize do
 
       def execute(args)
         return unless SiteSetting.discourse_zotero_bridge_enabled
-        DiscourseZoteroBridge::UsageLog.where("used_on < ?", 90.days.ago).delete_all
+        DiscourseZoteroBridge::UsageLog.where("used_on < ?", 90.days.ago).in_batches(of: 1000).delete_all
       end
     end
   end
