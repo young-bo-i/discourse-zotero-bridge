@@ -181,17 +181,56 @@
   }
 
   &__guide-requirement {
+    padding: 0.3em 0;
+    font-size: var(--font-down-1);
+    color: var(--primary-medium);
+
+    & + & {
+      border-top: 1px solid var(--primary-low);
+    }
+
+    &.--met {
+      .zotero-bridge-panel__guide-requirement-nums {
+        color: var(--success);
+      }
+    }
+  }
+
+  &__guide-requirement-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 0.2em 0;
-    font-size: var(--font-down-1);
-    color: var(--primary-medium);
+  }
+
+  &__guide-requirement-nums {
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    color: var(--primary);
+    white-space: nowrap;
   }
 
   &__guide-requirement-value {
     color: var(--primary);
     font-variant-numeric: tabular-nums;
+  }
+
+  &__guide-requirement-bar {
+    height: 4px;
+    margin-top: 0.2em;
+    background: var(--primary-low);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+
+  &__guide-requirement-fill {
+    height: 100%;
+    border-radius: 2px;
+    background: var(--tertiary);
+    transition: width 0.3s ease;
+
+    &.--met {
+      background: var(--success);
+    }
   }
 
   &__guide-show-more {
@@ -209,26 +248,6 @@
     &:hover {
       color: var(--tertiary-hover);
       text-decoration: underline;
-    }
-  }
-
-  &__guide-learn-more {
-    display: flex;
-    align-items: center;
-    gap: 0.4em;
-    margin-top: 0.6em;
-    padding-top: 0.5em;
-    border-top: 1px solid var(--primary-low);
-    font-size: var(--font-down-1);
-    color: var(--tertiary);
-    text-decoration: none;
-
-    &:hover {
-      color: var(--tertiary-hover);
-    }
-
-    .d-icon {
-      font-size: var(--font-down-2);
     }
   }
 

@@ -13,8 +13,6 @@ import { i18n } from "discourse-i18n";
 const GITHUB_URL = "https://github.com/young-bo-i/zotero-enterscholar";
 const DOWNLOAD_URL = "/zotero-bridge/download/latest";
 const TL_KEYS = ["tl0", "tl1", "tl2", "tl3", "tl4"];
-const TRUST_LEVEL_BLOG_URL =
-  "https://blog.discourse.org/2018/06/understanding-discourse-trust-levels/";
 const MAX_VISIBLE_REQUIREMENTS = 3;
 
 export default class ZoteroBridgeUserMenuPanel extends Component {
@@ -91,7 +89,17 @@ export default class ZoteroBridgeUserMenuPanel extends Component {
   }
 
   get nextLevelRequirements() {
-    return this.usageData?.next_level_requirements || [];
+    const reqs = this.usageData?.next_level_requirements || [];
+    return reqs.map((req) => {
+      const hasProgress = req.current !== null && req.current !== undefined;
+      let percent = 0;
+      let met = false;
+      if (hasProgress && req.value > 0) {
+        percent = Math.min(100, Math.round((req.current / req.value) * 100));
+        met = req.current >= req.value;
+      }
+      return { ...req, hasProgress, percent, met };
+    });
   }
 
   get visibleRequirements() {
@@ -251,18 +259,50 @@ export default class ZoteroBridgeUserMenuPanel extends Component {
                 </div>
                 <ul class="zotero-bridge-panel__guide-requirements">
                   {{#each this.visibleRequirements as |req|}}
-                    <li class="zotero-bridge-panel__guide-requirement">
-                      <span class="zotero-bridge-panel__guide-requirement-label">
-                        {{i18n
-                          (concat
-                            "zotero_bridge.quota_guide.requirement_labels."
-                            req.key
-                          )
-                        }}
-                      </span>
-                      <strong
-                        class="zotero-bridge-panel__guide-requirement-value"
-                      >{{req.value}}</strong>
+                    <li
+                      class={{concatClass
+                        "zotero-bridge-panel__guide-requirement"
+                        (if req.met "--met")
+                      }}
+                    >
+                      <div
+                        class="zotero-bridge-panel__guide-requirement-header"
+                      >
+                        <span
+                          class="zotero-bridge-panel__guide-requirement-label"
+                        >
+                          {{i18n
+                            (concat
+                              "zotero_bridge.quota_guide.requirement_labels."
+                              req.key
+                            )
+                          }}
+                        </span>
+                        {{#if req.hasProgress}}
+                          <span
+                            class="zotero-bridge-panel__guide-requirement-nums"
+                          >{{req.current}}
+                            /
+                            {{req.value}}</span>
+                        {{else}}
+                          <strong
+                            class="zotero-bridge-panel__guide-requirement-value"
+                          >{{req.value}}</strong>
+                        {{/if}}
+                      </div>
+                      {{#if req.hasProgress}}
+                        <div
+                          class="zotero-bridge-panel__guide-requirement-bar"
+                        >
+                          <div
+                            class={{concatClass
+                              "zotero-bridge-panel__guide-requirement-fill"
+                              (if req.met "--met")
+                            }}
+                            style="width: {{req.percent}}%"
+                          ></div>
+                        </div>
+                      {{/if}}
                     </li>
                   {{/each}}
                 </ul>
@@ -287,16 +327,6 @@ export default class ZoteroBridgeUserMenuPanel extends Component {
               {{/if}}
             </div>
 
-            <a
-              href={{TRUST_LEVEL_BLOG_URL}}
-              target="_blank"
-              rel="noopener noreferrer"
-              class="zotero-bridge-panel__guide-learn-more"
-            >
-              {{icon "book-open-reader"}}
-              {{i18n "zotero_bridge.quota_guide.learn_more"}}
-              {{icon "arrow-up-right-from-square"}}
-            </a>
           </div>
         {{/if}}
 

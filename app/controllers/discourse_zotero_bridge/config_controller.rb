@@ -56,7 +56,7 @@ module DiscourseZoteroBridge
                      daily_quota: SiteSetting.public_send("zotero_bridge_daily_quota_tl#{tl}"),
                    }
                  end,
-               next_level_requirements: build_next_level_requirements(current_user.trust_level),
+               next_level_requirements: build_next_level_requirements(current_user),
              }
     end
 
@@ -99,15 +99,59 @@ module DiscourseZoteroBridge
 
     private
 
-    def build_next_level_requirements(current_tl)
-      next_tl = current_tl + 1
+    def build_next_level_requirements(user)
+      next_tl = user.trust_level + 1
       keys = TL_REQUIREMENTS[next_tl]
       return nil if keys.nil?
 
-      requirements = keys.map { |key| { key: key, value: SiteSetting.public_send(key) } }
+      next_tl <= 2 ? build_tl12_requirements(user, keys) : build_tl3_requirements(user, keys)
+    end
 
-      if next_tl == 3
-        requirements.unshift({ key: "tl3_time_period", value: SiteSetting.tl3_time_period })
+    def build_tl12_requirements(user, keys)
+      stat = user.user_stat
+      reply_count = nil
+
+      keys.map do |key|
+        current =
+          case key
+          when /time_spent_mins/
+            stat.time_read / 60
+          when /topic_reply_count/
+            reply_count ||= stat.calc_topic_reply_count!
+          when /topics_entered/
+            stat.topics_entered
+          when /read_posts/
+            stat.posts_read_count
+          when /days_visited/
+            stat.days_visited
+          when /likes_received/
+            stat.likes_received
+          when /likes_given/
+            stat.likes_given
+          end
+
+        { key: key, value: SiteSetting.public_send(key), current: current }
+      end
+    end
+
+    def build_tl3_requirements(user, keys)
+      tl3 = TrustLevel3Requirements.new(user)
+      tl3_data = {
+        "tl3_requires_days_visited" => [tl3.min_days_visited, tl3.days_visited],
+        "tl3_requires_topics_replied_to" => [tl3.min_topics_replied_to, tl3.num_topics_replied_to],
+        "tl3_requires_topics_viewed" => [tl3.min_topics_viewed, tl3.topics_viewed],
+        "tl3_requires_posts_read" => [tl3.min_posts_read, tl3.posts_read],
+        "tl3_requires_likes_given" => [tl3.min_likes_given, tl3.num_likes_given],
+        "tl3_requires_likes_received" => [tl3.min_likes_received, tl3.num_likes_received],
+      }
+
+      requirements = [
+        { key: "tl3_time_period", value: SiteSetting.tl3_time_period, current: nil },
+      ]
+
+      keys.each do |key|
+        target, current = tl3_data[key]
+        requirements << { key: key, value: target, current: current }
       end
 
       requirements
