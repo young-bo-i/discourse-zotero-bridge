@@ -20,6 +20,8 @@ zh_CN:
     scopes:
       "discourse-zotero-bridge:zotero_bridge": "访问 Zotero Bridge（LLM 代理和使用配额）"
   zotero_bridge:
+    admin:
+      title: "Zotero Bridge"
     errors:
       quota_exceeded: "每日请求配额已用完，请明天再试。"
       service_busy: "服务当前繁忙，请稍后重试。"

@@ -20,6 +20,8 @@ en:
     scopes:
       "discourse-zotero-bridge:zotero_bridge": "Access Zotero Bridge (LLM proxy and usage quota)"
   zotero_bridge:
+    admin:
+      title: "Zotero Bridge"
     errors:
       quota_exceeded: "Daily request quota exceeded. Please try again tomorrow."
       service_busy: "Service is currently busy. Please try again shortly."

@@ -1,0 +1,108 @@
+.zotero-bridge-dashboard {
+  &__filters {
+    margin-bottom: 1em;
+  }
+
+  &__period-buttons {
+    display: flex;
+    gap: 0.5em;
+    flex-wrap: wrap;
+    margin-bottom: 0.75em;
+  }
+
+  &__custom-dates {
+    display: flex;
+    align-items: center;
+    gap: 0.5em;
+    flex-wrap: wrap;
+    margin-bottom: 0.75em;
+  }
+
+  &__summary {
+    margin-bottom: 1em;
+  }
+
+  &__charts {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 1em;
+    margin-bottom: 1em;
+
+    @media (max-width: 900px) {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  &__trend-chart,
+  &__tl-chart {
+    min-width: 0;
+  }
+
+  &__chart-container {
+    position: relative;
+    width: 100%;
+
+    &.--doughnut {
+      max-width: 320px;
+      margin: 0 auto;
+    }
+  }
+
+  &__users {
+    margin-bottom: 1em;
+  }
+
+  &__users-table {
+    width: 100%;
+    border-collapse: collapse;
+
+    th {
+      text-align: left;
+      padding: 0;
+
+      .btn-transparent {
+        padding: 0.5em 0.75em;
+        font-weight: 700;
+        width: 100%;
+        text-align: left;
+        justify-content: flex-start;
+      }
+    }
+
+    td {
+      padding: 0.5em 0.75em;
+      border-top: 1px solid var(--primary-low);
+    }
+  }
+
+  &__user-cell {
+    white-space: nowrap;
+  }
+
+  &__user-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4em;
+  }
+
+  &__pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1em;
+    margin-top: 1em;
+    padding-top: 0.75em;
+    border-top: 1px solid var(--primary-low);
+  }
+
+  &__page-info {
+    font-size: var(--font-down-1);
+    color: var(--primary-medium);
+  }
+
+  &__no-data {
+    text-align: center;
+    padding: 2em;
+    color: var(--primary-medium);
+  }
+}

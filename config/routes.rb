@@ -7,4 +7,11 @@ DiscourseZoteroBridge::Engine.routes.draw do
   post "/v1/chat/completions" => "proxy#chat_completions"
 end
 
-Discourse::Application.routes.draw { mount ::DiscourseZoteroBridge::Engine, at: "zotero-bridge" }
+Discourse::Application.routes.draw do
+  mount ::DiscourseZoteroBridge::Engine, at: "zotero-bridge"
+
+  scope "/admin/plugins/discourse-zotero-bridge", constraints: AdminConstraint.new do
+    get "/dashboard" => "discourse_zotero_bridge/admin/dashboard#show"
+    get "/dashboard/users" => "discourse_zotero_bridge/admin/dashboard#users"
+  end
+end

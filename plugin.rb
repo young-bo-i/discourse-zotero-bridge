@@ -9,12 +9,18 @@
 
 enabled_site_setting :discourse_zotero_bridge_enabled
 
+add_admin_route "zotero_bridge.admin.title", "discourse-zotero-bridge", use_new_show_route: true
+
 register_asset "stylesheets/zotero-bridge-panel.scss"
+register_asset "stylesheets/zotero-bridge-admin.scss"
 
 register_svg_icon "chart-bar"
 register_svg_icon "fab-github"
 register_svg_icon "download"
 register_svg_icon "plug"
+register_svg_icon "circle-question"
+register_svg_icon "book-open-reader"
+register_svg_icon "arrow-up-right-from-square"
 
 module ::DiscourseZoteroBridge
   PLUGIN_NAME = "discourse-zotero-bridge"

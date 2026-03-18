@@ -14,6 +14,27 @@ module DiscourseZoteroBridge
     DOWNLOAD_CACHE_TTL = 10.minutes
     DOWNLOAD_LOCK_KEY = "zotero_bridge_fetch_lock"
 
+    TL_REQUIREMENTS = {
+      1 => %w[tl1_requires_topics_entered tl1_requires_read_posts tl1_requires_time_spent_mins],
+      2 => %w[
+        tl2_requires_topics_entered
+        tl2_requires_read_posts
+        tl2_requires_time_spent_mins
+        tl2_requires_days_visited
+        tl2_requires_likes_received
+        tl2_requires_likes_given
+        tl2_requires_topic_reply_count
+      ],
+      3 => %w[
+        tl3_requires_days_visited
+        tl3_requires_topics_replied_to
+        tl3_requires_topics_viewed
+        tl3_requires_posts_read
+        tl3_requires_likes_given
+        tl3_requires_likes_received
+      ],
+    }.freeze
+
     def usage
       summary = UsageLog.usage_summary(current_user)
 
@@ -28,6 +49,14 @@ module DiscourseZoteroBridge
                extra_requests_max: summary[:extra_requests_max],
                can_request_extra: summary[:can_request_extra],
                username: current_user.username,
+               quota_tiers:
+                 (0..4).map do |tl|
+                   {
+                     trust_level: tl,
+                     daily_quota: SiteSetting.public_send("zotero_bridge_daily_quota_tl#{tl}"),
+                   }
+                 end,
+               next_level_requirements: build_next_level_requirements(current_user.trust_level),
              }
     end
 
@@ -69,6 +98,20 @@ module DiscourseZoteroBridge
     end
 
     private
+
+    def build_next_level_requirements(current_tl)
+      next_tl = current_tl + 1
+      keys = TL_REQUIREMENTS[next_tl]
+      return nil if keys.nil?
+
+      requirements = keys.map { |key| { key: key, value: SiteSetting.public_send(key) } }
+
+      if next_tl == 3
+        requirements.unshift({ key: "tl3_time_period", value: SiteSetting.tl3_time_period })
+      end
+
+      requirements
+    end
 
     def fetch_latest_xpi_url_with_lock
       DistributedMutex.synchronize(DOWNLOAD_LOCK_KEY, validity: 15) do
