@@ -66,7 +66,7 @@ module DiscourseZoteroBridge
           users:
             user_rows.map do |row|
               {
-                user_id: row.user_id,
+                id: row.user_id,
                 username: row.username,
                 trust_level: row.trust_level,
                 avatar_template: User.avatar_template(row.username, row.uploaded_avatar_id),

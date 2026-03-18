@@ -2,7 +2,6 @@ import Component from "@glimmer/component";
 import { tracked } from "@glimmer/tracking";
 import { fn } from "@ember/helper";
 import { action } from "@ember/object";
-import { LinkTo } from "@ember/routing";
 import AdminConfigAreaCard from "discourse/admin/components/admin-config-area-card";
 import Chart from "discourse/admin/components/chart";
 import ConditionalLoadingSpinner from "discourse/components/conditional-loading-spinner";
@@ -182,6 +181,10 @@ export default class ZoteroBridgeDashboard extends Component {
       { id: "week", name: i18n("zotero_bridge.admin.periods.last_week") },
       { id: "month", name: i18n("zotero_bridge.admin.periods.last_month") },
     ];
+  }
+
+  get hasUsers() {
+    return this.usersData?.users?.length > 0;
   }
 
   get usersTotal() {
@@ -435,7 +438,7 @@ export default class ZoteroBridgeDashboard extends Component {
         >
           <:content>
             <ConditionalLoadingSpinner @condition={{this.usersLoading}}>
-              {{#if this.usersData.users.length}}
+              {{#if this.hasUsers}}
                 <table class="zotero-bridge-dashboard__users-table">
                   <thead>
                     <tr>
@@ -490,9 +493,8 @@ export default class ZoteroBridgeDashboard extends Component {
                     {{#each this.usersData.users as |user|}}
                       <tr>
                         <td class="zotero-bridge-dashboard__user-cell">
-                          <LinkTo
-                            @route="adminUser"
-                            @model={{user}}
+                          <a
+                            href="/admin/users/{{user.id}}/{{user.username}}"
                             class="zotero-bridge-dashboard__user-link"
                           >
                             {{avatar
@@ -501,7 +503,7 @@ export default class ZoteroBridgeDashboard extends Component {
                               extraClasses="zotero-bridge-dashboard__avatar"
                             }}
                             {{user.username}}
-                          </LinkTo>
+                          </a>
                         </td>
                         <td>TL{{user.trust_level}}</td>
                         <td title={{user.total_requests}}>{{number
