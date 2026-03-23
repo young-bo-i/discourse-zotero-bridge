@@ -48,4 +48,4 @@ discourse_zotero_bridge:
     default: ""
     secret: true
   zotero_bridge_jnl_github_repo:
-    default: ""
+    default: "young-bo-i/zotero-enterscholar-journal"

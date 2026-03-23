@@ -23,7 +23,7 @@ en:
       extra_quota_exhausted: "All extra quota requests used for today."
       panel:
         translate_label: "Translation"
-        journal_label: "Journal"
+        journal_label: "Journal info"
         journal_count: "%{count} queries today"
         view_all_plugins: "View all plugins"
       marketplace:
@@ -41,8 +41,8 @@ en:
             name: "Translation plugin"
             description: "Translate PDFs in Zotero using AI models through the gateway."
           journal:
-            name: "Journal query plugin"
-            description: "Query journal information (impact factor, rankings, etc.) directly in Zotero."
+            name: "Journal info plugin"
+            description: "Look up journal details (JCR impact factor, SJR, CAS quartile, review turnaround, APC, etc.) directly in Zotero."
       quota_guide:
         toggle: "Quota Guide"
         title: "Daily Quota by Trust Level"
@@ -79,11 +79,11 @@ en:
         title: "Zotero Bridge"
         tabs:
           llm: "Translation"
-          journal: "Journal"
+          journal: "Journal info"
         dashboard: "Translation Usage Dashboard"
         dashboard_description: "Monitor translation API usage across all users"
-        journal_dashboard: "Journal Usage Dashboard"
-        journal_dashboard_description: "Monitor journal query API usage across all users"
+        journal_dashboard: "Journal Info Usage Dashboard"
+        journal_dashboard_description: "Monitor journal info API usage across all users"
         summary: "Summary"
         stats:
           today_requests: "Today's Requests"
