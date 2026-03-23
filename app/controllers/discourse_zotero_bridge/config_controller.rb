@@ -5,14 +5,12 @@ module DiscourseZoteroBridge
     requires_plugin PLUGIN_NAME
     requires_login
 
-    skip_before_action :check_xhr, only: [:download_latest]
-    skip_before_action :preload_json, only: [:download_latest]
+    skip_before_action :check_xhr, only: %i[download_latest download_journal_latest marketplace]
+    skip_before_action :preload_json, only: %i[download_latest download_journal_latest]
 
-    GITHUB_REPO = "young-bo-i/zotero-enterscholar"
-    GITHUB_API_RELEASES = "https://api.github.com/repos/#{GITHUB_REPO}/releases/latest"
-    DOWNLOAD_CACHE_KEY = "zotero_bridge_latest_xpi"
     DOWNLOAD_CACHE_TTL = 10.minutes
-    DOWNLOAD_LOCK_KEY = "zotero_bridge_fetch_lock"
+    MAX_REDIRECTS = 5
+    MAX_DOWNLOAD_SIZE = 50.megabytes
 
     TL_REQUIREMENTS = {
       1 => %w[tl1_requires_topics_entered tl1_requires_read_posts tl1_requires_time_spent_mins],
@@ -60,6 +58,66 @@ module DiscourseZoteroBridge
              }
     end
 
+    def jnl_usage
+      log = JournalLog.today_for(current_user)
+      render json: { used_today: log.request_count, username: current_user.username }
+    end
+
+    def marketplace
+      unless request.xhr?
+        render "default/empty"
+        return
+      end
+
+      translate_summary = UsageLog.usage_summary(current_user)
+      jnl_log = JournalLog.today_for(current_user)
+      translate_repo = SiteSetting.zotero_bridge_translate_github_repo
+      jnl_repo = SiteSetting.zotero_bridge_jnl_github_repo
+
+      plugins = [
+        {
+          id: "translate",
+          platform: "zotero",
+          github_url: translate_repo.present? ? "https://github.com/#{translate_repo}" : nil,
+          download_url: translate_repo.present? ? "/zotero-bridge/download/latest" : nil,
+          has_quota: true,
+          usage: {
+            used_today: translate_summary[:used_today],
+            daily_quota: translate_summary[:daily_quota],
+            remaining: translate_summary[:remaining],
+            extra_quota_granted: translate_summary[:extra_quota_granted],
+            extra_requests_used: translate_summary[:extra_requests_used],
+            extra_requests_max: translate_summary[:extra_requests_max],
+            can_request_extra: translate_summary[:can_request_extra],
+          },
+          quota_tiers:
+            (0..4).map do |tl|
+              {
+                trust_level: tl,
+                daily_quota: SiteSetting.public_send("zotero_bridge_daily_quota_tl#{tl}"),
+              }
+            end,
+          next_level_requirements: build_next_level_requirements(current_user),
+        },
+        {
+          id: "journal",
+          platform: "zotero",
+          github_url: jnl_repo.present? ? "https://github.com/#{jnl_repo}" : nil,
+          download_url: jnl_repo.present? ? "/zotero-bridge/download/journal/latest" : nil,
+          has_quota: false,
+          usage: {
+            used_today: jnl_log.request_count,
+          },
+        },
+      ]
+
+      render json: {
+               username: current_user.username,
+               trust_level: current_user.trust_level,
+               plugins: plugins,
+             }
+    end
+
     def request_extra_quota
       result = UsageLog.request_extra_quota!(current_user)
 
@@ -84,10 +142,33 @@ module DiscourseZoteroBridge
     end
 
     def download_latest
-      cached = Discourse.cache.read(DOWNLOAD_CACHE_KEY)
+      repo = SiteSetting.zotero_bridge_translate_github_repo
+      return repo_not_configured if repo.blank?
+
+      serve_github_release(repo, "zotero_bridge_translate_xpi")
+    end
+
+    def download_journal_latest
+      repo = SiteSetting.zotero_bridge_jnl_github_repo
+      return repo_not_configured if repo.blank?
+
+      serve_github_release(repo, "zotero_bridge_jnl_xpi")
+    end
+
+    private
+
+    def repo_not_configured
+      render json: { error: I18n.t("zotero_bridge.errors.download_unavailable") }, status: 404
+    end
+
+    def serve_github_release(repo, cache_prefix)
+      cache_key = "#{cache_prefix}_latest"
+      lock_key = "#{cache_prefix}_fetch_lock"
+
+      cached = Discourse.cache.read(cache_key)
 
       unless cached
-        cached = fetch_latest_xpi_url_with_lock
+        cached = fetch_release_with_lock(repo, cache_key, lock_key)
       end
 
       unless cached
@@ -97,7 +178,41 @@ module DiscourseZoteroBridge
       proxy_download(cached[:url], cached[:filename])
     end
 
-    private
+    def fetch_release_with_lock(repo, cache_key, lock_key)
+      DistributedMutex.synchronize(lock_key, validity: 15) do
+        cached = Discourse.cache.read(cache_key)
+        return cached if cached
+
+        result = fetch_latest_xpi_url(repo)
+        Discourse.cache.write(cache_key, result, expires_in: DOWNLOAD_CACHE_TTL) if result
+        result
+      end
+    rescue DistributedMutex::Timeout
+      Discourse.cache.read(cache_key)
+    end
+
+    def fetch_latest_xpi_url(repo)
+      api_url = "https://api.github.com/repos/#{repo}/releases/latest"
+      uri = URI.parse(api_url)
+      response =
+        Net::HTTP.start(uri.host, uri.port, use_ssl: true, open_timeout: 10, read_timeout: 10) do |http|
+          req = Net::HTTP::Get.new(uri)
+          req["Accept"] = "application/vnd.github+json"
+          req["User-Agent"] = "Discourse-ZoteroBridge"
+          http.request(req)
+        end
+
+      return nil unless response.code.to_i == 200
+
+      release = JSON.parse(response.body)
+      asset = release["assets"]&.find { |a| a["name"]&.end_with?(".xpi") }
+      return nil unless asset
+
+      { url: asset["browser_download_url"], filename: asset["name"] }
+    rescue StandardError => e
+      Rails.logger.warn("ZoteroBridge: failed to fetch latest release for #{repo}: #{e.message}")
+      nil
+    end
 
     def build_next_level_requirements(user)
       next_tl = user.trust_level + 1
@@ -156,44 +271,6 @@ module DiscourseZoteroBridge
 
       requirements
     end
-
-    def fetch_latest_xpi_url_with_lock
-      DistributedMutex.synchronize(DOWNLOAD_LOCK_KEY, validity: 15) do
-        cached = Discourse.cache.read(DOWNLOAD_CACHE_KEY)
-        return cached if cached
-
-        result = fetch_latest_xpi_url
-        Discourse.cache.write(DOWNLOAD_CACHE_KEY, result, expires_in: DOWNLOAD_CACHE_TTL) if result
-        result
-      end
-    rescue DistributedMutex::Timeout
-      Discourse.cache.read(DOWNLOAD_CACHE_KEY)
-    end
-
-    def fetch_latest_xpi_url
-      uri = URI.parse(GITHUB_API_RELEASES)
-      response =
-        Net::HTTP.start(uri.host, uri.port, use_ssl: true, open_timeout: 10, read_timeout: 10) do |http|
-          req = Net::HTTP::Get.new(uri)
-          req["Accept"] = "application/vnd.github+json"
-          req["User-Agent"] = "Discourse-ZoteroBridge"
-          http.request(req)
-        end
-
-      return nil unless response.code.to_i == 200
-
-      release = JSON.parse(response.body)
-      asset = release["assets"]&.find { |a| a["name"]&.end_with?(".xpi") }
-      return nil unless asset
-
-      { url: asset["browser_download_url"], filename: asset["name"] }
-    rescue StandardError => e
-      Rails.logger.warn("ZoteroBridge: failed to fetch latest release: #{e.message}")
-      nil
-    end
-
-    MAX_REDIRECTS = 5
-    MAX_DOWNLOAD_SIZE = 50.megabytes
 
     def proxy_download(url, filename)
       current_url = url

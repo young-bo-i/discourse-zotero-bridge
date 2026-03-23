@@ -2,8 +2,11 @@
 
 DiscourseZoteroBridge::Engine.routes.draw do
   get "/usage" => "config#usage"
+  get "/jnl/usage" => "config#jnl_usage"
+  get "/marketplace" => "config#marketplace"
   post "/request_extra_quota" => "config#request_extra_quota"
   get "/download/latest" => "config#download_latest"
+  get "/download/journal/latest" => "config#download_journal_latest"
   post "/v1/chat/completions" => "proxy#chat_completions"
   post "/v1/jnl/query" => "journal_proxy#query"
 end

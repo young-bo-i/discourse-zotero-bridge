@@ -13,6 +13,7 @@ add_admin_route "zotero_bridge.admin.title", "discourse-zotero-bridge", use_new_
 
 register_asset "stylesheets/zotero-bridge-panel.scss"
 register_asset "stylesheets/zotero-bridge-admin.scss"
+register_asset "stylesheets/zotero-bridge-marketplace.scss"
 
 register_svg_icon "chart-bar"
 register_svg_icon "fab-github"
@@ -21,6 +22,9 @@ register_svg_icon "plug"
 register_svg_icon "circle-question"
 register_svg_icon "book-open-reader"
 register_svg_icon "arrow-up-right-from-square"
+register_svg_icon "store"
+register_svg_icon "globe"
+register_svg_icon "clock"
 
 module ::DiscourseZoteroBridge
   PLUGIN_NAME = "discourse-zotero-bridge"
@@ -34,6 +38,8 @@ after_initialize do
     methods: %i[get post],
     actions: %w[
       discourse_zotero_bridge/config#usage
+      discourse_zotero_bridge/config#jnl_usage
+      discourse_zotero_bridge/config#marketplace
       discourse_zotero_bridge/config#request_extra_quota
       discourse_zotero_bridge/proxy#chat_completions
       discourse_zotero_bridge/journal_proxy#query

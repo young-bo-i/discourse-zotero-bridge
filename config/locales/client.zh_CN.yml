@@ -9,7 +9,7 @@ zh_CN:
       tabs:
         zotero_bridge: "Zotero 插件"
     zotero_bridge:
-      panel_title: "Zotero 插件"
+      panel_title: "插件中心"
       username: "用户名"
       trust_level: "信任等级"
       trust_level_badge: "TL%{level}"
@@ -21,9 +21,28 @@ zh_CN:
       request_extra_quota: "申请额外配额 (+50)"
       extra_quota_hint: "配额已用完。今日额外申请次数：%{used}/%{max}"
       extra_quota_exhausted: "今日额外配额申请次数已用完。"
-      zotero_plugin: "Zotero 插件"
-      github_project: "GitHub 项目"
-      plugin_download: "下载插件"
+      panel:
+        translate_label: "翻译"
+        journal_label: "期刊"
+        journal_count: "今日 %{count} 次查询"
+        view_all_plugins: "查看全部插件"
+      marketplace:
+        title: "插件市场"
+        description: "浏览和管理你的网关插件"
+        platform: "平台：%{platform}"
+        usage_today: "今日已使用"
+        queries_count: "%{count} 次查询"
+        no_quota_limit: "无每日配额限制"
+        source_code: "源代码"
+        download_plugin: "下载插件 (.xpi)"
+        coming_soon: "即将推出"
+        plugins:
+          translate:
+            name: "翻译插件"
+            description: "通过网关使用 AI 模型在 Zotero 中翻译 PDF 文档。"
+          journal:
+            name: "期刊查询插件"
+            description: "在 Zotero 中直接查询期刊信息（影响因子、排名等）。"
       quota_guide:
         toggle: "配额指南"
         title: "各信任等级每日配额"
@@ -59,10 +78,10 @@ zh_CN:
       admin:
         title: "Zotero Bridge"
         tabs:
-          llm: "大模型"
+          llm: "翻译"
           journal: "期刊"
-        dashboard: "大模型使用量统计"
-        dashboard_description: "监控所有用户的 LLM API 使用情况"
+        dashboard: "翻译使用量统计"
+        dashboard_description: "监控所有用户的翻译 API 使用情况"
         journal_dashboard: "期刊使用量统计"
         journal_dashboard_description: "监控所有用户的期刊查询 API 使用情况"
         summary: "概览"

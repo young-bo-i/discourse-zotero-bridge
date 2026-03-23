@@ -1,34 +1,27 @@
 import Component from "@glimmer/component";
 import { tracked } from "@glimmer/tracking";
-import { concat } from "@ember/helper";
-import { on } from "@ember/modifier";
 import { action } from "@ember/object";
+import { service } from "@ember/service";
 import DButton from "discourse/components/d-button";
-import concatClass from "discourse/helpers/concat-class";
 import icon from "discourse/helpers/d-icon";
 import { ajax } from "discourse/lib/ajax";
 import { popupAjaxError } from "discourse/lib/ajax-error";
 import { i18n } from "discourse-i18n";
 
-const GITHUB_URL = "https://github.com/young-bo-i/zotero-enterscholar";
-const DOWNLOAD_URL = "/zotero-bridge/download/latest";
-const TL_KEYS = ["tl0", "tl1", "tl2", "tl3", "tl4"];
-const MAX_VISIBLE_REQUIREMENTS = 3;
-
 export default class ZoteroBridgeUserMenuPanel extends Component {
+  @service router;
+
   @tracked usageData = null;
+  @tracked jnlData = null;
   @tracked loading = false;
   @tracked error = null;
-  @tracked requestingExtra = false;
-  @tracked showGuide = false;
-  @tracked showAllRequirements = false;
 
   constructor() {
     super(...arguments);
-    this.loadUsage();
+    this.loadData();
   }
 
-  get progressPercent() {
+  get translateProgressPercent() {
     if (!this.usageData || this.usageData.daily_quota === 0) {
       return 0;
     }
@@ -40,8 +33,8 @@ export default class ZoteroBridgeUserMenuPanel extends Component {
     );
   }
 
-  get progressClass() {
-    const pct = this.progressPercent;
+  get translateProgressClass() {
+    const pct = this.translateProgressPercent;
     if (pct >= 90) {
       return "critical";
     }
@@ -51,88 +44,17 @@ export default class ZoteroBridgeUserMenuPanel extends Component {
     return "normal";
   }
 
-  get quotaExhausted() {
-    return this.usageData && this.usageData.remaining === 0;
-  }
-
-  get showExtraButton() {
-    return this.quotaExhausted && this.usageData?.can_request_extra;
-  }
-
-  get quotaTiers() {
-    const tiers = this.usageData?.quota_tiers;
-    if (!tiers) {
-      return [];
-    }
-    return tiers.map((tier) => ({
-      trust_level: tier.trust_level,
-      daily_quota: tier.daily_quota,
-      name: i18n(`zotero_bridge.quota_guide.tl_names.${TL_KEYS[tier.trust_level]}`),
-      isCurrent: tier.trust_level === this.usageData.trust_level,
-    }));
-  }
-
-  get nextLevel() {
-    const current = this.usageData?.trust_level;
-    if (current === undefined || current >= 4) {
-      return null;
-    }
-    return current + 1;
-  }
-
-  get nextLevelName() {
-    const next = this.nextLevel;
-    if (next === null) {
-      return null;
-    }
-    return i18n(`zotero_bridge.quota_guide.tl_names.${TL_KEYS[next]}`);
-  }
-
-  get nextLevelRequirements() {
-    const reqs = this.usageData?.next_level_requirements || [];
-    return reqs.map((req) => {
-      const hasProgress = req.current !== null && req.current !== undefined;
-      let percent = 0;
-      let met = false;
-      if (hasProgress && req.value > 0) {
-        percent = Math.min(100, Math.round((req.current / req.value) * 100));
-        met = req.current >= req.value;
-      }
-      return { ...req, hasProgress, percent, met };
-    });
-  }
-
-  get visibleRequirements() {
-    if (this.showAllRequirements) {
-      return this.nextLevelRequirements;
-    }
-    return this.nextLevelRequirements.slice(0, MAX_VISIBLE_REQUIREMENTS);
-  }
-
-  get hasMoreRequirements() {
-    return this.nextLevelRequirements.length > MAX_VISIBLE_REQUIREMENTS;
-  }
-
-  get hiddenRequirementsCount() {
-    return this.nextLevelRequirements.length - MAX_VISIBLE_REQUIREMENTS;
-  }
-
   @action
-  toggleGuide() {
-    this.showGuide = !this.showGuide;
-  }
-
-  @action
-  toggleAllRequirements() {
-    this.showAllRequirements = !this.showAllRequirements;
-  }
-
-  @action
-  async loadUsage() {
+  async loadData() {
     this.loading = true;
     this.error = null;
     try {
-      this.usageData = await ajax("/zotero-bridge/usage");
+      const [usage, jnl] = await Promise.all([
+        ajax("/zotero-bridge/usage"),
+        ajax("/zotero-bridge/jnl/usage"),
+      ]);
+      this.usageData = usage;
+      this.jnlData = jnl;
     } catch (e) {
       this.error = true;
       popupAjaxError(e);
@@ -142,20 +64,8 @@ export default class ZoteroBridgeUserMenuPanel extends Component {
   }
 
   @action
-  async requestExtraQuota() {
-    this.requestingExtra = true;
-    try {
-      const result = await ajax("/zotero-bridge/request_extra_quota", {
-        type: "POST",
-      });
-      if (result.success) {
-        await this.loadUsage();
-      }
-    } catch (e) {
-      popupAjaxError(e);
-    } finally {
-      this.requestingExtra = false;
-    }
+  goToMarketplace() {
+    this.router.transitionTo("zoteroBridgeMarketplace");
   }
 
   <template>
@@ -177,7 +87,7 @@ export default class ZoteroBridgeUserMenuPanel extends Component {
         <div class="zotero-bridge-panel__error">
           {{i18n "zotero_bridge.load_error"}}
           <DButton
-            @action={{this.loadUsage}}
+            @action={{this.loadData}}
             @label="zotero_bridge.retry"
             class="btn-small btn-default"
           />
@@ -196,220 +106,61 @@ export default class ZoteroBridgeUserMenuPanel extends Component {
           <span class="zotero-bridge-panel__label">{{i18n
               "zotero_bridge.trust_level"
             }}</span>
-          <span class="zotero-bridge-panel__trust-right">
-            <span
-              class="zotero-bridge-panel__value zotero-bridge-panel__tl-badge"
-            >{{i18n
-                "zotero_bridge.trust_level_badge"
-                level=this.usageData.trust_level
-              }}</span>
-            <button
-              type="button"
-              class="zotero-bridge-panel__guide-toggle btn-transparent"
-              title={{i18n "zotero_bridge.quota_guide.toggle"}}
-              {{on "click" this.toggleGuide}}
-            >
-              {{icon "circle-question"}}
-            </button>
+          <span class="zotero-bridge-panel__value zotero-bridge-panel__tl-badge">
+            {{i18n
+              "zotero_bridge.trust_level_badge"
+              level=this.usageData.trust_level
+            }}
           </span>
         </div>
 
-        {{#if this.showGuide}}
-          <div class="zotero-bridge-panel__guide">
-            <div class="zotero-bridge-panel__guide-title">
-              {{i18n "zotero_bridge.quota_guide.title"}}
+        <div class="zotero-bridge-panel__gateway-section">
+          <div class="zotero-bridge-panel__gateway">
+            <div class="zotero-bridge-panel__gateway-header">
+              {{icon "globe"}}
+              <span>{{i18n "zotero_bridge.panel.translate_label"}}</span>
+              <span class="zotero-bridge-panel__gateway-numbers">
+                {{this.usageData.used_today}}
+                /
+                {{this.usageData.daily_quota}}
+              </span>
             </div>
-
-            <ul class="zotero-bridge-panel__guide-tiers">
-              {{#each this.quotaTiers as |tier|}}
-                <li
-                  class={{concatClass
-                    "zotero-bridge-panel__guide-tier"
-                    (if tier.isCurrent "--current")
-                  }}
-                >
-                  <span class="zotero-bridge-panel__guide-tier-label">
-                    <span
-                      class="zotero-bridge-panel__guide-tier-badge"
-                    >TL{{tier.trust_level}}</span>
-                    {{tier.name}}
-                    {{#if tier.isCurrent}}
-                      <span
-                        class="zotero-bridge-panel__guide-current-tag"
-                      >{{i18n "zotero_bridge.quota_guide.current_label"}}</span>
-                    {{/if}}
-                  </span>
-                  <span class="zotero-bridge-panel__guide-tier-quota">
-                    {{i18n
-                      "zotero_bridge.quota_guide.per_day"
-                      count=tier.daily_quota
-                    }}
-                  </span>
-                </li>
-              {{/each}}
-            </ul>
-
-            <div class="zotero-bridge-panel__guide-tips">
-              {{#if this.nextLevel}}
-                <div class="zotero-bridge-panel__guide-tips-title">
-                  {{i18n
-                    "zotero_bridge.quota_guide.next_level"
-                    level_name=this.nextLevelName
-                  }}
-                </div>
-                <ul class="zotero-bridge-panel__guide-requirements">
-                  {{#each this.visibleRequirements as |req|}}
-                    <li
-                      class={{concatClass
-                        "zotero-bridge-panel__guide-requirement"
-                        (if req.met "--met")
-                      }}
-                    >
-                      <div
-                        class="zotero-bridge-panel__guide-requirement-header"
-                      >
-                        <span
-                          class="zotero-bridge-panel__guide-requirement-label"
-                        >
-                          {{i18n
-                            (concat
-                              "zotero_bridge.quota_guide.requirement_labels."
-                              req.key
-                            )
-                          }}
-                        </span>
-                        {{#if req.hasProgress}}
-                          <span
-                            class="zotero-bridge-panel__guide-requirement-nums"
-                          >{{req.current}}
-                            /
-                            {{req.value}}</span>
-                        {{else}}
-                          <strong
-                            class="zotero-bridge-panel__guide-requirement-value"
-                          >{{req.value}}</strong>
-                        {{/if}}
-                      </div>
-                      {{#if req.hasProgress}}
-                        <div
-                          class="zotero-bridge-panel__guide-requirement-bar"
-                        >
-                          <div
-                            class={{concatClass
-                              "zotero-bridge-panel__guide-requirement-fill"
-                              (if req.met "--met")
-                            }}
-                            style="width: {{req.percent}}%"
-                          ></div>
-                        </div>
-                      {{/if}}
-                    </li>
-                  {{/each}}
-                </ul>
-                {{#if this.hasMoreRequirements}}
-                  {{#unless this.showAllRequirements}}
-                    <button
-                      type="button"
-                      class="zotero-bridge-panel__guide-show-more btn-transparent"
-                      {{on "click" this.toggleAllRequirements}}
-                    >
-                      {{i18n
-                        "zotero_bridge.quota_guide.show_more"
-                        count=this.hiddenRequirementsCount
-                      }}
-                    </button>
-                  {{/unless}}
-                {{/if}}
-              {{else}}
-                <p class="zotero-bridge-panel__guide-tips-text --max">
-                  {{i18n "zotero_bridge.quota_guide.already_max"}}
-                </p>
-              {{/if}}
+            <div class="zotero-bridge-panel__progress-bar">
+              <div
+                class="zotero-bridge-panel__progress-fill
+                  {{this.translateProgressClass}}"
+                style="width: {{this.translateProgressPercent}}%"
+              ></div>
             </div>
-
           </div>
-        {{/if}}
 
-        <div class="zotero-bridge-panel__progress-section">
-          <div class="zotero-bridge-panel__quota-text">
-            <span>{{i18n "zotero_bridge.used_today"}}</span>
-            <span class="zotero-bridge-panel__numbers">
-              {{this.usageData.used_today}}
-              /
-              {{this.usageData.daily_quota}}
-            </span>
+          <div class="zotero-bridge-panel__gateway">
+            <div class="zotero-bridge-panel__gateway-header">
+              {{icon "book-open-reader"}}
+              <span>{{i18n "zotero_bridge.panel.journal_label"}}</span>
+              <span class="zotero-bridge-panel__gateway-numbers">
+                {{i18n
+                  "zotero_bridge.panel.journal_count"
+                  count=this.jnlData.used_today
+                }}
+              </span>
+            </div>
           </div>
-          <div class="zotero-bridge-panel__progress-bar">
-            <div
-              class="zotero-bridge-panel__progress-fill
-                {{this.progressClass}}"
-              style="width: {{this.progressPercent}}%"
-            ></div>
-          </div>
-        </div>
-
-        <div class="zotero-bridge-panel__remaining">
-          <span class="zotero-bridge-panel__label">{{i18n
-              "zotero_bridge.remaining"
-            }}</span>
-          <span
-            class="zotero-bridge-panel__value zotero-bridge-panel__remaining-count"
-          >{{this.usageData.remaining}}</span>
         </div>
 
         <div class="zotero-bridge-panel__reset-hint">
           {{icon "clock"}}
           {{i18n "zotero_bridge.reset_hint"}}
         </div>
-
-        {{#if this.quotaExhausted}}
-          <div class="zotero-bridge-panel__extra-quota">
-            {{#if this.showExtraButton}}
-              <div class="zotero-bridge-panel__extra-hint">
-                {{i18n
-                  "zotero_bridge.extra_quota_hint"
-                  used=this.usageData.extra_requests_used
-                  max=this.usageData.extra_requests_max
-                }}
-              </div>
-              <DButton
-                @action={{this.requestExtraQuota}}
-                @label="zotero_bridge.request_extra_quota"
-                @disabled={{this.requestingExtra}}
-                class="btn-primary zotero-bridge-panel__extra-btn"
-              />
-            {{else}}
-              <div class="zotero-bridge-panel__extra-exhausted">
-                {{i18n "zotero_bridge.extra_quota_exhausted"}}
-              </div>
-            {{/if}}
-          </div>
-        {{/if}}
       {{/if}}
 
-      <div class="zotero-bridge-panel__links">
-        <div class="zotero-bridge-panel__links-header">
-          {{icon "plug"}}
-          <span>{{i18n "zotero_bridge.zotero_plugin"}}</span>
-        </div>
-        <a
-          href={{GITHUB_URL}}
-          target="_blank"
-          rel="noopener noreferrer"
-          class="zotero-bridge-panel__link"
-        >
-          {{icon "fab-github"}}
-          <span>{{i18n "zotero_bridge.github_project"}}</span>
-        </a>
-        <a
-          href={{DOWNLOAD_URL}}
-          download
-          data-auto-route="true"
-          class="zotero-bridge-panel__link"
-        >
-          {{icon "download"}}
-          <span>{{i18n "zotero_bridge.plugin_download"}}</span>
-        </a>
+      <div class="zotero-bridge-panel__marketplace-link">
+        <DButton
+          @action={{this.goToMarketplace}}
+          @icon="store"
+          @label="zotero_bridge.panel.view_all_plugins"
+          class="btn-default btn-small zotero-bridge-panel__marketplace-btn"
+        />
       </div>
     </div>
   </template>

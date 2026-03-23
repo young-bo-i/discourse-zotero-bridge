@@ -9,21 +9,40 @@ en:
       tabs:
         zotero_bridge: "Zotero Plugin"
     zotero_bridge:
-      panel_title: "Zotero Plugin"
+      panel_title: "Plugin center"
       username: "Username"
       trust_level: "Trust Level"
       trust_level_badge: "TL%{level}"
-      used_today: "Used Today"
+      used_today: "Used today"
       remaining: "Remaining"
       reset_hint: "Quota resets daily at midnight"
       load_error: "Failed to load usage data"
       retry: "Retry"
-      request_extra_quota: "Request Extra Quota (+50)"
+      request_extra_quota: "Request extra quota (+50)"
       extra_quota_hint: "Quota used up. Extra requests today: %{used}/%{max}"
       extra_quota_exhausted: "All extra quota requests used for today."
-      zotero_plugin: "Zotero Plugin"
-      github_project: "GitHub Project"
-      plugin_download: "Download Plugin"
+      panel:
+        translate_label: "Translation"
+        journal_label: "Journal"
+        journal_count: "%{count} queries today"
+        view_all_plugins: "View all plugins"
+      marketplace:
+        title: "Plugin marketplace"
+        description: "Browse and manage your gateway plugins"
+        platform: "Platform: %{platform}"
+        usage_today: "Used today"
+        queries_count: "%{count} queries"
+        no_quota_limit: "No daily quota limit"
+        source_code: "Source code"
+        download_plugin: "Download plugin (.xpi)"
+        coming_soon: "Coming soon"
+        plugins:
+          translate:
+            name: "Translation plugin"
+            description: "Translate PDFs in Zotero using AI models through the gateway."
+          journal:
+            name: "Journal query plugin"
+            description: "Query journal information (impact factor, rankings, etc.) directly in Zotero."
       quota_guide:
         toggle: "Quota Guide"
         title: "Daily Quota by Trust Level"
@@ -59,10 +78,10 @@ en:
       admin:
         title: "Zotero Bridge"
         tabs:
-          llm: "LLM"
+          llm: "Translation"
           journal: "Journal"
-        dashboard: "LLM Usage Dashboard"
-        dashboard_description: "Monitor LLM API usage across all users"
+        dashboard: "Translation Usage Dashboard"
+        dashboard_description: "Monitor translation API usage across all users"
         journal_dashboard: "Journal Usage Dashboard"
         journal_dashboard_description: "Monitor journal query API usage across all users"
         summary: "Summary"

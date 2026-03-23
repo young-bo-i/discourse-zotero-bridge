@@ -16,11 +16,13 @@ en:
     zotero_bridge_daily_quota_tl4: "Daily request quota for Trust Level 4 users"
     zotero_bridge_extra_quota_amount: "Number of extra requests granted per extra quota request"
     zotero_bridge_max_extra_requests_per_day: "Maximum number of extra quota requests a user can make per day"
+    zotero_bridge_translate_github_repo: "GitHub repository for the translation plugin (owner/repo format)"
     zotero_bridge_jnl_base_url: "Journal API base URL (e.g. https://open.scholaly.com)"
     zotero_bridge_jnl_api_key: "Journal API key (secret)"
+    zotero_bridge_jnl_github_repo: "GitHub repository for the journal plugin (owner/repo format, leave empty if not yet available)"
   user_api_key:
     scopes:
-      "discourse-zotero-bridge:zotero_bridge": "Access Zotero Bridge (LLM proxy and usage quota)"
+      "discourse-zotero-bridge:zotero_bridge": "Access Zotero Bridge (translation proxy, journal queries, and usage data)"
   zotero_bridge:
     admin:
       title: "Zotero Bridge"

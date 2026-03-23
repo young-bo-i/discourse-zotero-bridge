@@ -16,11 +16,13 @@ zh_CN:
     zotero_bridge_daily_quota_tl4: "信任等级 4 用户每日请求配额"
     zotero_bridge_extra_quota_amount: "每次额外配额申请增加的请求次数"
     zotero_bridge_max_extra_requests_per_day: "每日最多可申请额外配额的次数"
+    zotero_bridge_translate_github_repo: "翻译插件的 GitHub 仓库（owner/repo 格式）"
     zotero_bridge_jnl_base_url: "期刊 API 主端点（如 https://open.scholaly.com）"
     zotero_bridge_jnl_api_key: "期刊 API 密钥（机密）"
+    zotero_bridge_jnl_github_repo: "期刊插件的 GitHub 仓库（owner/repo 格式，未上线可留空）"
   user_api_key:
     scopes:
-      "discourse-zotero-bridge:zotero_bridge": "访问 Zotero Bridge（LLM 代理和使用配额）"
+      "discourse-zotero-bridge:zotero_bridge": "访问 Zotero Bridge（翻译代理、期刊查询和使用数据）"
   zotero_bridge:
     admin:
       title: "Zotero Bridge"
