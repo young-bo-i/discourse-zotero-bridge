@@ -58,8 +58,13 @@ en:
         already_max: "You have reached the highest trust level!"
       admin:
         title: "Zotero Bridge"
-        dashboard: "Usage Dashboard"
+        tabs:
+          llm: "LLM"
+          journal: "Journal"
+        dashboard: "LLM Usage Dashboard"
         dashboard_description: "Monitor LLM API usage across all users"
+        journal_dashboard: "Journal Usage Dashboard"
+        journal_dashboard_description: "Monitor journal query API usage across all users"
         summary: "Summary"
         stats:
           today_requests: "Today's Requests"

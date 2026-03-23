@@ -16,6 +16,8 @@ en:
     zotero_bridge_daily_quota_tl4: "Daily request quota for Trust Level 4 users"
     zotero_bridge_extra_quota_amount: "Number of extra requests granted per extra quota request"
     zotero_bridge_max_extra_requests_per_day: "Maximum number of extra quota requests a user can make per day"
+    zotero_bridge_jnl_base_url: "Journal API base URL (e.g. https://open.scholaly.com)"
+    zotero_bridge_jnl_api_key: "Journal API key (secret)"
   user_api_key:
     scopes:
       "discourse-zotero-bridge:zotero_bridge": "Access Zotero Bridge (LLM proxy and usage quota)"
@@ -34,3 +36,7 @@ en:
       proxy_error: "Proxy error."
       streaming_not_supported: "Streaming not supported."
       extra_quota_limit_reached: "You have reached the maximum number of extra quota requests for today."
+      jnl_invalid_name: "Invalid request: journal name is required."
+      jnl_service_error: "Journal API service error."
+      jnl_timeout: "Journal API service timeout."
+      jnl_proxy_error: "Journal proxy error."

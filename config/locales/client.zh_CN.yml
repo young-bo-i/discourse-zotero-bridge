@@ -58,8 +58,13 @@ zh_CN:
         already_max: "你已达到最高信任等级！"
       admin:
         title: "Zotero Bridge"
-        dashboard: "使用量统计"
+        tabs:
+          llm: "大模型"
+          journal: "期刊"
+        dashboard: "大模型使用量统计"
         dashboard_description: "监控所有用户的 LLM API 使用情况"
+        journal_dashboard: "期刊使用量统计"
+        journal_dashboard_description: "监控所有用户的期刊查询 API 使用情况"
         summary: "概览"
         stats:
           today_requests: "今日请求数"

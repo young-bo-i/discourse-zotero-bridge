@@ -36,6 +36,7 @@ after_initialize do
       discourse_zotero_bridge/config#usage
       discourse_zotero_bridge/config#request_extra_quota
       discourse_zotero_bridge/proxy#chat_completions
+      discourse_zotero_bridge/journal_proxy#query
     ],
   )
 
@@ -46,6 +47,15 @@ after_initialize do
       def execute(args)
         return unless SiteSetting.discourse_zotero_bridge_enabled
         DiscourseZoteroBridge::UsageLog.where("used_on < ?", 90.days.ago).in_batches(of: 1000).delete_all
+      end
+    end
+
+    class CleanUpZoteroBridgeJournalLogs < ::Jobs::Scheduled
+      every 1.day
+
+      def execute(args)
+        return unless SiteSetting.discourse_zotero_bridge_enabled
+        DiscourseZoteroBridge::JournalLog.where("used_on < ?", 90.days.ago).in_batches(of: 1000).delete_all
       end
     end
   end

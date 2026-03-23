@@ -40,3 +40,8 @@ discourse_zotero_bridge:
     default: 3
     min: 0
     max: 10
+  zotero_bridge_jnl_base_url:
+    default: "https://open.scholaly.com"
+  zotero_bridge_jnl_api_key:
+    default: ""
+    secret: true

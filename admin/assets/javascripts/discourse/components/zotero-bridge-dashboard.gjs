@@ -17,6 +17,7 @@ import { eq } from "discourse/truth-helpers";
 import { i18n } from "discourse-i18n";
 
 export default class ZoteroBridgeDashboard extends Component {
+  @tracked activeTab = "llm";
   @tracked startDate = moment().subtract(30, "days").toDate();
   @tracked endDate = new Date();
   @tracked data = this.args.model;
@@ -33,6 +34,38 @@ export default class ZoteroBridgeDashboard extends Component {
   constructor() {
     super(...arguments);
     this.fetchUsers();
+  }
+
+  get isLlmTab() {
+    return this.activeTab === "llm";
+  }
+
+  get isJournalTab() {
+    return this.activeTab === "journal";
+  }
+
+  get dashboardTitle() {
+    return this.isJournalTab
+      ? i18n("zotero_bridge.admin.journal_dashboard")
+      : i18n("zotero_bridge.admin.dashboard");
+  }
+
+  get dashboardDescription() {
+    return this.isJournalTab
+      ? i18n("zotero_bridge.admin.journal_dashboard_description")
+      : i18n("zotero_bridge.admin.dashboard_description");
+  }
+
+  get dashboardUrl() {
+    return this.isJournalTab
+      ? "/admin/plugins/discourse-zotero-bridge/dashboard/journal.json"
+      : "/admin/plugins/discourse-zotero-bridge/dashboard.json";
+  }
+
+  get usersUrl() {
+    return this.isJournalTab
+      ? "/admin/plugins/discourse-zotero-bridge/dashboard/journal/users.json"
+      : "/admin/plugins/discourse-zotero-bridge/dashboard/users.json";
   }
 
   get metrics() {
@@ -205,18 +238,27 @@ export default class ZoteroBridgeDashboard extends Component {
   }
 
   @action
+  onTabSelect(tab) {
+    if (this.activeTab === tab) {
+      return;
+    }
+    this.activeTab = tab;
+    this.usersPage = 1;
+    this.usersSortField = "total_requests";
+    this.usersSortDirection = "desc";
+    this.fetchDashboard();
+  }
+
+  @action
   async fetchDashboard() {
     this.loadingData = true;
     try {
-      const response = await ajax(
-        "/admin/plugins/discourse-zotero-bridge/dashboard.json",
-        {
-          data: {
-            start_date: moment(this.startDate).format("YYYY-MM-DD"),
-            end_date: moment(this.endDate).format("YYYY-MM-DD"),
-          },
-        }
-      );
+      const response = await ajax(this.dashboardUrl, {
+        data: {
+          start_date: moment(this.startDate).format("YYYY-MM-DD"),
+          end_date: moment(this.endDate).format("YYYY-MM-DD"),
+        },
+      });
       this.data = response;
     } finally {
       this.loadingData = false;
@@ -229,19 +271,16 @@ export default class ZoteroBridgeDashboard extends Component {
   async fetchUsers() {
     this.usersLoading = true;
     try {
-      const response = await ajax(
-        "/admin/plugins/discourse-zotero-bridge/dashboard/users.json",
-        {
-          data: {
-            start_date: moment(this.startDate).format("YYYY-MM-DD"),
-            end_date: moment(this.endDate).format("YYYY-MM-DD"),
-            page: this.usersPage,
-            per_page: 20,
-            order: this.usersSortField,
-            direction: this.usersSortDirection,
-          },
-        }
-      );
+      const response = await ajax(this.usersUrl, {
+        data: {
+          start_date: moment(this.startDate).format("YYYY-MM-DD"),
+          end_date: moment(this.endDate).format("YYYY-MM-DD"),
+          page: this.usersPage,
+          per_page: 20,
+          order: this.usersSortField,
+          direction: this.usersSortDirection,
+        },
+      });
       this.usersData = response;
     } finally {
       this.usersLoading = false;
@@ -346,9 +385,22 @@ export default class ZoteroBridgeDashboard extends Component {
   <template>
     <div class="zotero-bridge-dashboard admin-detail">
       <DPageSubheader
-        @titleLabel={{i18n "zotero_bridge.admin.dashboard"}}
-        @descriptionLabel={{i18n "zotero_bridge.admin.dashboard_description"}}
+        @titleLabel={{this.dashboardTitle}}
+        @descriptionLabel={{this.dashboardDescription}}
       />
+
+      <div class="zotero-bridge-dashboard__tabs">
+        <DButton
+          class={{if this.isLlmTab "btn-primary" "btn-default"}}
+          @action={{fn this.onTabSelect "llm"}}
+          @label="zotero_bridge.admin.tabs.llm"
+        />
+        <DButton
+          class={{if this.isJournalTab "btn-primary" "btn-default"}}
+          @action={{fn this.onTabSelect "journal"}}
+          @label="zotero_bridge.admin.tabs.journal"
+        />
+      </div>
 
       <div class="zotero-bridge-dashboard__filters">
         <div class="zotero-bridge-dashboard__period-buttons">
@@ -469,15 +521,17 @@ export default class ZoteroBridgeDashboard extends Component {
                           }}{{this.sortIndicator 'total_requests'}}"
                         />
                       </th>
-                      <th>
-                        <DButton
-                          class="btn-transparent"
-                          @action={{fn this.sortUsers "extra_requests"}}
-                          @translatedLabel="{{i18n
-                            'zotero_bridge.admin.users_table.extra_requests'
-                          }}{{this.sortIndicator 'extra_requests'}}"
-                        />
-                      </th>
+                      {{#if this.isLlmTab}}
+                        <th>
+                          <DButton
+                            class="btn-transparent"
+                            @action={{fn this.sortUsers "extra_requests"}}
+                            @translatedLabel="{{i18n
+                              'zotero_bridge.admin.users_table.extra_requests'
+                            }}{{this.sortIndicator 'extra_requests'}}"
+                          />
+                        </th>
+                      {{/if}}
                       <th>
                         <DButton
                           class="btn-transparent"
@@ -509,7 +563,9 @@ export default class ZoteroBridgeDashboard extends Component {
                         <td title={{user.total_requests}}>{{number
                             user.total_requests
                           }}</td>
-                        <td>{{user.extra_requests}}</td>
+                        {{#if this.isLlmTab}}
+                          <td>{{user.extra_requests}}</td>
+                        {{/if}}
                         <td>{{user.last_active_on}}</td>
                       </tr>
                     {{/each}}

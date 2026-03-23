@@ -16,6 +16,8 @@ zh_CN:
     zotero_bridge_daily_quota_tl4: "信任等级 4 用户每日请求配额"
     zotero_bridge_extra_quota_amount: "每次额外配额申请增加的请求次数"
     zotero_bridge_max_extra_requests_per_day: "每日最多可申请额外配额的次数"
+    zotero_bridge_jnl_base_url: "期刊 API 主端点（如 https://open.scholaly.com）"
+    zotero_bridge_jnl_api_key: "期刊 API 密钥（机密）"
   user_api_key:
     scopes:
       "discourse-zotero-bridge:zotero_bridge": "访问 Zotero Bridge（LLM 代理和使用配额）"
@@ -34,3 +36,7 @@ zh_CN:
       proxy_error: "代理错误。"
       streaming_not_supported: "不支持流式传输。"
       extra_quota_limit_reached: "今日额外配额申请次数已达上限。"
+      jnl_invalid_name: "无效请求：缺少期刊名称。"
+      jnl_service_error: "期刊 API 服务错误。"
+      jnl_timeout: "期刊 API 服务超时。"
+      jnl_proxy_error: "期刊代理错误。"
