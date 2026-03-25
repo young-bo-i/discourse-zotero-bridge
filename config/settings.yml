@@ -49,3 +49,32 @@ discourse_zotero_bridge:
     secret: true
   zotero_bridge_jnl_github_repo:
     default: "young-bo-i/zotero-enterscholar-journal"
+  zotero_bridge_babeldoc_base_url:
+    default: "https://babeldoc.enterscholar.com"
+  zotero_bridge_babeldoc_api_key:
+    default: ""
+    secret: true
+  zotero_bridge_babeldoc_github_repo:
+    default: "young-bo-i/zotero-enterscholar-immersivetranslate"
+  zotero_bridge_babeldoc_daily_quota_tl0:
+    default: 2
+    min: 0
+  zotero_bridge_babeldoc_daily_quota_tl1:
+    default: 5
+    min: 0
+  zotero_bridge_babeldoc_daily_quota_tl2:
+    default: 10
+    min: 0
+  zotero_bridge_babeldoc_daily_quota_tl3:
+    default: 20
+    min: 0
+  zotero_bridge_babeldoc_daily_quota_tl4:
+    default: 50
+    min: 0
+  zotero_bridge_babeldoc_extra_quota_amount:
+    default: 3
+    min: 1
+  zotero_bridge_babeldoc_max_extra_requests_per_day:
+    default: 2
+    min: 0
+    max: 10

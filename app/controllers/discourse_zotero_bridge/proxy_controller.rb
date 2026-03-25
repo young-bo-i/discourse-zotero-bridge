@@ -17,19 +17,34 @@ module DiscourseZoteroBridge
     STREAM_COUNTER_KEY = "zotero_bridge:active_streams"
     STREAM_SLOT_TTL = LLM_TIMEOUT + 30
 
-    def self.acquire_stream_slot
-      current = Discourse.redis.incr(STREAM_COUNTER_KEY)
-      if current > MAX_CONCURRENT_STREAMS
-        Discourse.redis.decr(STREAM_COUNTER_KEY)
-        return false
+    ACQUIRE_SLOT_SCRIPT = <<~LUA
+      local current = redis.call('incr', KEYS[1])
+      if current > tonumber(ARGV[1]) then
+        redis.call('decr', KEYS[1])
+        return 0
       end
-      Discourse.redis.expire(STREAM_COUNTER_KEY, STREAM_SLOT_TTL)
-      true
+      redis.call('expire', KEYS[1], tonumber(ARGV[2]))
+      return 1
+    LUA
+
+    RELEASE_SLOT_SCRIPT = <<~LUA
+      local val = redis.call('decr', KEYS[1])
+      if val <= 0 then
+        redis.call('del', KEYS[1])
+      end
+      return val
+    LUA
+
+    def self.acquire_stream_slot
+      Discourse.redis.eval(
+        ACQUIRE_SLOT_SCRIPT,
+        keys: [STREAM_COUNTER_KEY],
+        argv: [MAX_CONCURRENT_STREAMS, STREAM_SLOT_TTL],
+      ) == 1
     end
 
     def self.release_stream_slot
-      val = Discourse.redis.decr(STREAM_COUNTER_KEY)
-      Discourse.redis.del(STREAM_COUNTER_KEY) if val <= 0
+      Discourse.redis.eval(RELEASE_SLOT_SCRIPT, keys: [STREAM_COUNTER_KEY])
     end
 
     def self.active_stream_count

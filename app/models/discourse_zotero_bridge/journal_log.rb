@@ -10,6 +10,15 @@ module DiscourseZoteroBridge
     validates :used_on, presence: true
     validates :request_count, numericality: { greater_than_or_equal_to: 0 }
 
+    UPSERT_INCREMENT_SQL = <<~SQL
+      INSERT INTO zotero_bridge_journal_logs
+        (user_id, used_on, request_count, created_at, updated_at)
+      VALUES (:user_id, CURRENT_DATE, 1, :now, :now)
+      ON CONFLICT (user_id, used_on)
+      DO UPDATE SET request_count = zotero_bridge_journal_logs.request_count + 1,
+                    updated_at = :now
+    SQL
+
     def self.today_for(user)
       find_or_create_by(user_id: user.id, used_on: Date.current)
     rescue ActiveRecord::RecordNotUnique
@@ -17,9 +26,8 @@ module DiscourseZoteroBridge
     end
 
     def self.increment!(user)
-      today_for(user)
-      where(user_id: user.id, used_on: Date.current).update_all(
-        ["request_count = request_count + 1, updated_at = ?", Time.current],
+      connection.exec_query(
+        sanitize_sql_array([UPSERT_INCREMENT_SQL, { user_id: user.id, now: Time.current }]),
       )
     end
   end

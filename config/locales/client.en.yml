@@ -23,6 +23,7 @@ en:
       extra_quota_exhausted: "All extra quota requests used for today."
       panel:
         translate_label: "Translation"
+        babeldoc_label: "PDF translation"
         journal_label: "Journal info"
         journal_count: "%{count} queries today"
         view_all_plugins: "View all plugins"
@@ -40,6 +41,9 @@ en:
           translate:
             name: "Translation plugin"
             description: "Translate PDFs in Zotero using AI models through the gateway."
+          babeldoc:
+            name: "PDF comparative translation"
+            description: "Translate PDF documents with bilingual side-by-side output, preserving the original layout."
           journal:
             name: "Journal info plugin"
             description: "Look up journal details (JCR impact factor, SJR, CAS quartile, review turnaround, APC, etc.) directly in Zotero."
@@ -79,11 +83,14 @@ en:
         title: "Zotero Bridge"
         tabs:
           llm: "Translation"
+          babeldoc: "PDF translation"
           journal: "Journal info"
         dashboard: "Translation Usage Dashboard"
         dashboard_description: "Monitor translation API usage across all users"
         journal_dashboard: "Journal Info Usage Dashboard"
         journal_dashboard_description: "Monitor journal info API usage across all users"
+        babeldoc_dashboard: "PDF translation usage dashboard"
+        babeldoc_dashboard_description: "Monitor BabelDOC PDF translation usage across all users"
         summary: "Summary"
         stats:
           today_requests: "Today's Requests"

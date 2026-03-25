@@ -25,6 +25,7 @@ register_svg_icon "arrow-up-right-from-square"
 register_svg_icon "store"
 register_svg_icon "globe"
 register_svg_icon "clock"
+register_svg_icon "file-pdf"
 
 module ::DiscourseZoteroBridge
   PLUGIN_NAME = "discourse-zotero-bridge"
@@ -35,14 +36,26 @@ require_relative "lib/discourse_zotero_bridge/engine"
 after_initialize do
   add_user_api_key_scope(
     :zotero_bridge,
-    methods: %i[get post],
+    methods: %i[get post put],
     actions: %w[
       discourse_zotero_bridge/config#usage
       discourse_zotero_bridge/config#jnl_usage
+      discourse_zotero_bridge/config#babeldoc_usage
       discourse_zotero_bridge/config#marketplace
       discourse_zotero_bridge/config#request_extra_quota
+      discourse_zotero_bridge/config#request_babeldoc_extra_quota
       discourse_zotero_bridge/proxy#chat_completions
       discourse_zotero_bridge/journal_proxy#query
+      discourse_zotero_bridge/babeldoc_proxy#connectivity_check
+      discourse_zotero_bridge/babeldoc_proxy#check_key
+      discourse_zotero_bridge/babeldoc_proxy#pdf_upload_url
+      discourse_zotero_bridge/babeldoc_proxy#upload
+      discourse_zotero_bridge/babeldoc_proxy#translate
+      discourse_zotero_bridge/babeldoc_proxy#process_status
+      discourse_zotero_bridge/babeldoc_proxy#temp_url
+      discourse_zotero_bridge/babeldoc_proxy#download
+      discourse_zotero_bridge/babeldoc_proxy#record_list
+      discourse_zotero_bridge/babeldoc_proxy#pdf_count
     ],
   )
 
@@ -62,6 +75,15 @@ after_initialize do
       def execute(args)
         return unless SiteSetting.discourse_zotero_bridge_enabled
         DiscourseZoteroBridge::JournalLog.where("used_on < ?", 90.days.ago).in_batches(of: 1000).delete_all
+      end
+    end
+
+    class CleanUpZoteroBridgeBabeldocLogs < ::Jobs::Scheduled
+      every 1.day
+
+      def execute(args)
+        return unless SiteSetting.discourse_zotero_bridge_enabled
+        DiscourseZoteroBridge::BabeldocLog.where("used_on < ?", 90.days.ago).in_batches(of: 1000).delete_all
       end
     end
   end

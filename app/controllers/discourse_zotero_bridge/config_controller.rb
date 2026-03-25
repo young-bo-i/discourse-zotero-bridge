@@ -5,8 +5,8 @@ module DiscourseZoteroBridge
     requires_plugin PLUGIN_NAME
     requires_login
 
-    skip_before_action :check_xhr, only: %i[download_latest download_journal_latest marketplace]
-    skip_before_action :preload_json, only: %i[download_latest download_journal_latest]
+    skip_before_action :check_xhr, only: %i[download_latest download_journal_latest download_babeldoc_latest marketplace]
+    skip_before_action :preload_json, only: %i[download_latest download_journal_latest download_babeldoc_latest]
 
     DOWNLOAD_CACHE_TTL = 10.minutes
     MAX_REDIRECTS = 5
@@ -63,6 +63,32 @@ module DiscourseZoteroBridge
       render json: { used_today: log.request_count, username: current_user.username }
     end
 
+    def babeldoc_usage
+      summary = BabeldocLog.usage_summary(current_user)
+
+      render json: {
+               trust_level: summary[:trust_level],
+               daily_quota: summary[:daily_quota],
+               base_quota: summary[:base_quota],
+               used_today: summary[:used_today],
+               remaining: summary[:remaining],
+               extra_quota_granted: summary[:extra_quota_granted],
+               extra_requests_used: summary[:extra_requests_used],
+               extra_requests_max: summary[:extra_requests_max],
+               can_request_extra: summary[:can_request_extra],
+               username: current_user.username,
+               quota_tiers:
+                 (0..4).map do |tl|
+                   {
+                     trust_level: tl,
+                     daily_quota:
+                       SiteSetting.public_send("zotero_bridge_babeldoc_daily_quota_tl#{tl}"),
+                   }
+                 end,
+               next_level_requirements: build_next_level_requirements(current_user),
+             }
+    end
+
     def marketplace
       unless request.xhr?
         render "default/empty"
@@ -71,8 +97,10 @@ module DiscourseZoteroBridge
 
       translate_summary = UsageLog.usage_summary(current_user)
       jnl_log = JournalLog.today_for(current_user)
+      babeldoc_summary = BabeldocLog.usage_summary(current_user)
       translate_repo = SiteSetting.zotero_bridge_translate_github_repo
       jnl_repo = SiteSetting.zotero_bridge_jnl_github_repo
+      babeldoc_repo = SiteSetting.zotero_bridge_babeldoc_github_repo
 
       plugins = [
         {
@@ -95,6 +123,31 @@ module DiscourseZoteroBridge
               {
                 trust_level: tl,
                 daily_quota: SiteSetting.public_send("zotero_bridge_daily_quota_tl#{tl}"),
+              }
+            end,
+          next_level_requirements: build_next_level_requirements(current_user),
+        },
+        {
+          id: "babeldoc",
+          platform: "zotero",
+          github_url: babeldoc_repo.present? ? "https://github.com/#{babeldoc_repo}" : nil,
+          download_url: babeldoc_repo.present? ? "/zotero-bridge/download/babeldoc/latest" : nil,
+          has_quota: true,
+          usage: {
+            used_today: babeldoc_summary[:used_today],
+            daily_quota: babeldoc_summary[:daily_quota],
+            remaining: babeldoc_summary[:remaining],
+            extra_quota_granted: babeldoc_summary[:extra_quota_granted],
+            extra_requests_used: babeldoc_summary[:extra_requests_used],
+            extra_requests_max: babeldoc_summary[:extra_requests_max],
+            can_request_extra: babeldoc_summary[:can_request_extra],
+          },
+          quota_tiers:
+            (0..4).map do |tl|
+              {
+                trust_level: tl,
+                daily_quota:
+                  SiteSetting.public_send("zotero_bridge_babeldoc_daily_quota_tl#{tl}"),
               }
             end,
           next_level_requirements: build_next_level_requirements(current_user),
@@ -153,6 +206,36 @@ module DiscourseZoteroBridge
       return repo_not_configured if repo.blank?
 
       serve_github_release(repo, "zotero_bridge_jnl_xpi")
+    end
+
+    def download_babeldoc_latest
+      repo = SiteSetting.zotero_bridge_babeldoc_github_repo
+      return repo_not_configured if repo.blank?
+
+      serve_github_release(repo, "zotero_bridge_babeldoc_xpi")
+    end
+
+    def request_babeldoc_extra_quota
+      result = BabeldocLog.request_extra_quota!(current_user)
+
+      if result[:success]
+        summary = BabeldocLog.usage_summary(current_user)
+        render json: {
+                 success: true,
+                 extra_granted: result[:extra_granted],
+                 daily_quota: summary[:daily_quota],
+                 remaining: summary[:remaining],
+                 extra_requests_used: summary[:extra_requests_used],
+                 extra_requests_max: summary[:extra_requests_max],
+                 can_request_extra: summary[:can_request_extra],
+               }
+      else
+        render json: {
+                 success: false,
+                 error: I18n.t("zotero_bridge.errors.babeldoc_extra_quota_limit_reached"),
+               },
+               status: 429
+      end
     end
 
     private
@@ -272,7 +355,7 @@ module DiscourseZoteroBridge
       requirements
     end
 
-    def proxy_download(url, filename)
+    def resolve_download_url(url)
       current_url = url
       redirects = 0
 
@@ -283,43 +366,111 @@ module DiscourseZoteroBridge
             uri.host,
             uri.port,
             use_ssl: uri.scheme == "https",
-            open_timeout: 15,
-            read_timeout: 60,
+            open_timeout: 10,
+            read_timeout: 10,
           ) do |http|
-            req = Net::HTTP::Get.new(uri)
+            req = Net::HTTP::Head.new(uri)
             req["User-Agent"] = "Discourse-ZoteroBridge"
             http.request(req)
           end
 
         if response.is_a?(Net::HTTPRedirection) && response["location"]
           redirects += 1
-          if redirects > MAX_REDIRECTS
-            return(
-              render json: { error: I18n.t("zotero_bridge.errors.download_unavailable") }, status: 502
-            )
-          end
+          return nil if redirects > MAX_REDIRECTS
           current_url = URI.join(uri, response["location"]).to_s
           next
         end
 
-        unless response.code.to_i == 200
-          return(
-            render json: { error: I18n.t("zotero_bridge.errors.download_unavailable") }, status: 502
-          )
-        end
+        return nil unless response.code.to_i == 200
 
-        if response.body.bytesize > MAX_DOWNLOAD_SIZE
-          return(
-            render json: { error: I18n.t("zotero_bridge.errors.download_unavailable") }, status: 502
-          )
-        end
+        content_length = response["content-length"].to_i
+        return nil if content_length > MAX_DOWNLOAD_SIZE
 
-        send_data response.body,
-                  filename: filename,
-                  type: "application/x-xpinstall",
-                  disposition: "attachment"
+        return current_url
+      end
+    end
+
+    def proxy_download(url, filename)
+      final_url = resolve_download_url(url)
+      unless final_url
+        return(
+          render json: { error: I18n.t("zotero_bridge.errors.download_unavailable") }, status: 502
+        )
+      end
+
+      hijacker = request.env["rack.hijack"]
+      unless hijacker
+        redirect_to final_url, allow_other_host: true
         return
       end
+
+      io = hijacker.call
+
+      Thread.new do
+        begin
+          uri = URI.parse(final_url)
+          Net::HTTP.start(
+            uri.host,
+            uri.port,
+            use_ssl: uri.scheme == "https",
+            open_timeout: 15,
+            read_timeout: 60,
+          ) do |http|
+            req = Net::HTTP::Get.new(uri)
+            req["User-Agent"] = "Discourse-ZoteroBridge"
+
+            http.request(req) do |response|
+              unless response.code.to_i == 200
+                write_download_error(io)
+                next
+              end
+
+              write_download_headers(io, filename, response["content-length"])
+              bytes_sent = 0
+              truncated = false
+              response.read_body do |chunk|
+                bytes_sent += chunk.bytesize
+                if bytes_sent > MAX_DOWNLOAD_SIZE
+                  truncated = true
+                  break
+                end
+                io.write(chunk)
+              end
+              if truncated
+                Rails.logger.warn("ZoteroBridge: download truncated at #{bytes_sent} bytes (limit #{MAX_DOWNLOAD_SIZE})")
+              end
+            end
+          end
+        rescue StandardError => e
+          Rails.logger.error("ZoteroBridge download stream error: #{e.message}")
+        ensure
+          io&.close rescue nil
+        end
+      end
+
+      head 200
+    end
+
+    def write_download_headers(io, filename, content_length)
+      safe_name = filename.gsub(/[^\w.\-]/, "_")
+      io.write "HTTP/1.1 200 OK\r\n"
+      io.write "Content-Type: application/x-xpinstall\r\n"
+      io.write "Content-Disposition: attachment; filename=\"#{safe_name}\"\r\n"
+      io.write "Content-Length: #{content_length}\r\n" if content_length.present?
+      io.write "Connection: close\r\n"
+      io.write "\r\n"
+      io.flush
+    end
+
+    def write_download_error(io)
+      body = { error: I18n.t("zotero_bridge.errors.download_unavailable") }.to_json
+      io.write "HTTP/1.1 502 Bad Gateway\r\n"
+      io.write "Content-Type: application/json; charset=utf-8\r\n"
+      io.write "Content-Length: #{body.bytesize}\r\n"
+      io.write "Connection: close\r\n"
+      io.write "\r\n"
+      io.write body
+      io.flush
     end
   end
 end

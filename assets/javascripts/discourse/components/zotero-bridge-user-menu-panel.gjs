@@ -2,6 +2,7 @@ import Component from "@glimmer/component";
 import { tracked } from "@glimmer/tracking";
 import { action } from "@ember/object";
 import { service } from "@ember/service";
+import { htmlSafe } from "@ember/template";
 import DButton from "discourse/components/d-button";
 import icon from "discourse/helpers/d-icon";
 import { ajax } from "discourse/lib/ajax";
@@ -13,6 +14,7 @@ export default class ZoteroBridgeUserMenuPanel extends Component {
 
   @tracked usageData = null;
   @tracked jnlData = null;
+  @tracked babeldocData = null;
   @tracked loading = false;
   @tracked error = null;
 
@@ -27,14 +29,43 @@ export default class ZoteroBridgeUserMenuPanel extends Component {
     }
     return Math.min(
       100,
-      Math.round(
-        (this.usageData.used_today / this.usageData.daily_quota) * 100
-      )
+      Math.round((this.usageData.used_today / this.usageData.daily_quota) * 100)
     );
+  }
+
+  get translateProgressStyle() {
+    return htmlSafe(`width: ${this.translateProgressPercent}%`);
   }
 
   get translateProgressClass() {
     const pct = this.translateProgressPercent;
+    if (pct >= 90) {
+      return "critical";
+    }
+    if (pct >= 70) {
+      return "warning";
+    }
+    return "normal";
+  }
+
+  get babeldocProgressPercent() {
+    if (!this.babeldocData || this.babeldocData.daily_quota === 0) {
+      return 0;
+    }
+    return Math.min(
+      100,
+      Math.round(
+        (this.babeldocData.used_today / this.babeldocData.daily_quota) * 100
+      )
+    );
+  }
+
+  get babeldocProgressStyle() {
+    return htmlSafe(`width: ${this.babeldocProgressPercent}%`);
+  }
+
+  get babeldocProgressClass() {
+    const pct = this.babeldocProgressPercent;
     if (pct >= 90) {
       return "critical";
     }
@@ -49,12 +80,14 @@ export default class ZoteroBridgeUserMenuPanel extends Component {
     this.loading = true;
     this.error = null;
     try {
-      const [usage, jnl] = await Promise.all([
+      const [usage, jnl, babeldoc] = await Promise.all([
         ajax("/zotero-bridge/usage"),
         ajax("/zotero-bridge/jnl/usage"),
+        ajax("/zotero-bridge/babeldoc/usage"),
       ]);
       this.usageData = usage;
       this.jnlData = jnl;
+      this.babeldocData = babeldoc;
     } catch (e) {
       this.error = true;
       popupAjaxError(e);
@@ -106,7 +139,9 @@ export default class ZoteroBridgeUserMenuPanel extends Component {
           <span class="zotero-bridge-panel__label">{{i18n
               "zotero_bridge.trust_level"
             }}</span>
-          <span class="zotero-bridge-panel__value zotero-bridge-panel__tl-badge">
+          <span
+            class="zotero-bridge-panel__value zotero-bridge-panel__tl-badge"
+          >
             {{i18n
               "zotero_bridge.trust_level_badge"
               level=this.usageData.trust_level
@@ -129,7 +164,26 @@ export default class ZoteroBridgeUserMenuPanel extends Component {
               <div
                 class="zotero-bridge-panel__progress-fill
                   {{this.translateProgressClass}}"
-                style="width: {{this.translateProgressPercent}}%"
+                style={{this.translateProgressStyle}}
+              ></div>
+            </div>
+          </div>
+
+          <div class="zotero-bridge-panel__gateway">
+            <div class="zotero-bridge-panel__gateway-header">
+              {{icon "file-pdf"}}
+              <span>{{i18n "zotero_bridge.panel.babeldoc_label"}}</span>
+              <span class="zotero-bridge-panel__gateway-numbers">
+                {{this.babeldocData.used_today}}
+                /
+                {{this.babeldocData.daily_quota}}
+              </span>
+            </div>
+            <div class="zotero-bridge-panel__progress-bar">
+              <div
+                class="zotero-bridge-panel__progress-fill
+                  {{this.babeldocProgressClass}}"
+                style={{this.babeldocProgressStyle}}
               ></div>
             </div>
           </div>

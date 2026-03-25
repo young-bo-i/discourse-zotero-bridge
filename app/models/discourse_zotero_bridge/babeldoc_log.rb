@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
 module DiscourseZoteroBridge
-  class UsageLog < ActiveRecord::Base
-    self.table_name = "zotero_bridge_usage_logs"
+  class BabeldocLog < ActiveRecord::Base
+    self.table_name = "zotero_bridge_babeldoc_logs"
 
     belongs_to :user
 
@@ -11,16 +11,17 @@ module DiscourseZoteroBridge
     validates :request_count, numericality: { greater_than_or_equal_to: 0 }
 
     VALID_TRUST_LEVELS = (0..4).freeze
+    SETTING_PREFIX = "zotero_bridge_babeldoc"
 
     ENSURE_ROW_SQL = <<~SQL
-      INSERT INTO zotero_bridge_usage_logs
+      INSERT INTO zotero_bridge_babeldoc_logs
         (user_id, used_on, request_count, extra_quota_granted, extra_requests_count, created_at, updated_at)
       VALUES (:user_id, CURRENT_DATE, 0, 0, 0, :now, :now)
       ON CONFLICT (user_id, used_on) DO NOTHING
     SQL
 
     INCREMENT_SQL = <<~SQL
-      UPDATE zotero_bridge_usage_logs
+      UPDATE zotero_bridge_babeldoc_logs
       SET request_count = request_count + 1, updated_at = :now
       WHERE user_id = :user_id AND used_on = CURRENT_DATE
         AND request_count < (:base_quota + extra_quota_granted)
@@ -28,9 +29,15 @@ module DiscourseZoteroBridge
                 (:base_quota + extra_quota_granted) AS effective_quota
     SQL
 
+    DECREMENT_SQL = <<~SQL
+      UPDATE zotero_bridge_babeldoc_logs
+      SET request_count = GREATEST(request_count - 1, 0), updated_at = :now
+      WHERE user_id = :user_id AND used_on = CURRENT_DATE
+    SQL
+
     QUOTA_STATE_SQL = <<~SQL
       SELECT request_count, (:base_quota + extra_quota_granted) AS effective_quota
-      FROM zotero_bridge_usage_logs
+      FROM zotero_bridge_babeldoc_logs
       WHERE user_id = :user_id AND used_on = CURRENT_DATE
     SQL
 
@@ -44,12 +51,7 @@ module DiscourseZoteroBridge
       tl = user.trust_level
       raise ArgumentError, "Invalid trust level: #{tl}" unless VALID_TRUST_LEVELS.include?(tl)
 
-      SiteSetting.public_send("zotero_bridge_daily_quota_tl#{tl}")
-    end
-
-    def self.effective_quota_for(user)
-      log = today_for(user)
-      daily_quota_for(user) + log.extra_quota_granted
+      SiteSetting.public_send("#{SETTING_PREFIX}_daily_quota_tl#{tl}")
     end
 
     def self.increment_and_check!(user)
@@ -75,10 +77,16 @@ module DiscourseZoteroBridge
       end
     end
 
+    def self.rollback_increment!(user)
+      now = Time.current
+      binds = { user_id: user.id, now: now }
+      connection.exec_query(sanitize_sql_array([DECREMENT_SQL, binds]))
+    end
+
     def self.request_extra_quota!(user)
       log = today_for(user)
-      max_requests = SiteSetting.zotero_bridge_max_extra_requests_per_day
-      extra_amount = SiteSetting.zotero_bridge_extra_quota_amount
+      max_requests = SiteSetting.public_send("#{SETTING_PREFIX}_max_extra_requests_per_day")
+      extra_amount = SiteSetting.public_send("#{SETTING_PREFIX}_extra_quota_amount")
 
       if log.extra_requests_count >= max_requests
         return { success: false, reason: :max_requests_reached }
@@ -102,7 +110,7 @@ module DiscourseZoteroBridge
       log = today_for(user)
       base_quota = daily_quota_for(user)
       total_quota = base_quota + log.extra_quota_granted
-      max_extra = SiteSetting.zotero_bridge_max_extra_requests_per_day
+      max_extra = SiteSetting.public_send("#{SETTING_PREFIX}_max_extra_requests_per_day")
 
       {
         trust_level: user.trust_level,

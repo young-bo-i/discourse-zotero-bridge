@@ -23,6 +23,7 @@ zh_CN:
       extra_quota_exhausted: "今日额外配额申请次数已用完。"
       panel:
         translate_label: "翻译"
+        babeldoc_label: "对照翻译"
         journal_label: "期刊信息"
         journal_count: "今日 %{count} 次查询"
         view_all_plugins: "查看全部插件"
@@ -40,6 +41,9 @@ zh_CN:
           translate:
             name: "翻译插件"
             description: "通过网关使用 AI 模型在 Zotero 中翻译 PDF 文档。"
+          babeldoc:
+            name: "对照翻译插件"
+            description: "翻译 PDF 文档并生成双语对照输出，保留原始排版格式。"
           journal:
             name: "期刊信息插件"
             description: "在 Zotero 中直接查询期刊详细信息（JCR 影响因子、SJR、中科院分区、审稿周期、APC 费用等）。"
@@ -79,11 +83,14 @@ zh_CN:
         title: "Zotero Bridge"
         tabs:
           llm: "翻译"
+          babeldoc: "对照翻译"
           journal: "期刊信息"
         dashboard: "翻译使用量统计"
         dashboard_description: "监控所有用户的翻译 API 使用情况"
         journal_dashboard: "期刊信息使用量统计"
         journal_dashboard_description: "监控所有用户的期刊信息 API 使用情况"
+        babeldoc_dashboard: "对照翻译使用量统计"
+        babeldoc_dashboard_description: "监控所有用户的 BabelDOC 对照翻译使用情况"
         summary: "概览"
         stats:
           today_requests: "今日请求数"

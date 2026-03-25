@@ -40,29 +40,49 @@ export default class ZoteroBridgeDashboard extends Component {
     return this.activeTab === "llm";
   }
 
+  get isBabeldocTab() {
+    return this.activeTab === "babeldoc";
+  }
+
   get isJournalTab() {
     return this.activeTab === "journal";
   }
 
+  get showExtraRequestsColumn() {
+    return this.isLlmTab || this.isBabeldocTab;
+  }
+
   get dashboardTitle() {
+    if (this.isBabeldocTab) {
+      return i18n("zotero_bridge.admin.babeldoc_dashboard");
+    }
     return this.isJournalTab
       ? i18n("zotero_bridge.admin.journal_dashboard")
       : i18n("zotero_bridge.admin.dashboard");
   }
 
   get dashboardDescription() {
+    if (this.isBabeldocTab) {
+      return i18n("zotero_bridge.admin.babeldoc_dashboard_description");
+    }
     return this.isJournalTab
       ? i18n("zotero_bridge.admin.journal_dashboard_description")
       : i18n("zotero_bridge.admin.dashboard_description");
   }
 
   get dashboardUrl() {
+    if (this.isBabeldocTab) {
+      return "/admin/plugins/discourse-zotero-bridge/dashboard/babeldoc.json";
+    }
     return this.isJournalTab
       ? "/admin/plugins/discourse-zotero-bridge/dashboard/journal.json"
       : "/admin/plugins/discourse-zotero-bridge/dashboard.json";
   }
 
   get usersUrl() {
+    if (this.isBabeldocTab) {
+      return "/admin/plugins/discourse-zotero-bridge/dashboard/babeldoc/users.json";
+    }
     return this.isJournalTab
       ? "/admin/plugins/discourse-zotero-bridge/dashboard/journal/users.json"
       : "/admin/plugins/discourse-zotero-bridge/dashboard/users.json";
@@ -396,6 +416,11 @@ export default class ZoteroBridgeDashboard extends Component {
           @label="zotero_bridge.admin.tabs.llm"
         />
         <DButton
+          class={{if this.isBabeldocTab "btn-primary" "btn-default"}}
+          @action={{fn this.onTabSelect "babeldoc"}}
+          @label="zotero_bridge.admin.tabs.babeldoc"
+        />
+        <DButton
           class={{if this.isJournalTab "btn-primary" "btn-default"}}
           @action={{fn this.onTabSelect "journal"}}
           @label="zotero_bridge.admin.tabs.journal"
@@ -473,7 +498,9 @@ export default class ZoteroBridgeDashboard extends Component {
           >
             <:content>
               {{#if this.tlChartConfig}}
-                <div class="zotero-bridge-dashboard__chart-container --doughnut">
+                <div
+                  class="zotero-bridge-dashboard__chart-container --doughnut"
+                >
                   <Chart
                     @chartConfig={{this.tlChartConfig}}
                     class="zotero-bridge-dashboard__chart"
@@ -521,7 +548,7 @@ export default class ZoteroBridgeDashboard extends Component {
                           }}{{this.sortIndicator 'total_requests'}}"
                         />
                       </th>
-                      {{#if this.isLlmTab}}
+                      {{#if this.showExtraRequestsColumn}}
                         <th>
                           <DButton
                             class="btn-transparent"
@@ -563,7 +590,7 @@ export default class ZoteroBridgeDashboard extends Component {
                         <td title={{user.total_requests}}>{{number
                             user.total_requests
                           }}</td>
-                        {{#if this.isLlmTab}}
+                        {{#if this.showExtraRequestsColumn}}
                           <td>{{user.extra_requests}}</td>
                         {{/if}}
                         <td>{{user.last_active_on}}</td>
@@ -576,7 +603,7 @@ export default class ZoteroBridgeDashboard extends Component {
                   <DButton
                     class="btn-default"
                     @action={{this.prevPage}}
-                    @disabled={{(if this.hasPrevPage false true)}}
+                    @disabled={{if this.hasPrevPage false true}}
                     @label="zotero_bridge.admin.pagination.prev"
                   />
                   <span class="zotero-bridge-dashboard__page-info">
@@ -589,7 +616,7 @@ export default class ZoteroBridgeDashboard extends Component {
                   <DButton
                     class="btn-default"
                     @action={{this.nextPage}}
-                    @disabled={{(if this.hasNextPage false true)}}
+                    @disabled={{if this.hasNextPage false true}}
                     @label="zotero_bridge.admin.pagination.next"
                   />
                 </div>
